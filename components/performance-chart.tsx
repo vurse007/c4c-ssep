@@ -60,7 +60,7 @@ export function PerformanceChart({ data }: Props) {
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           }}
           labelFormatter={(v) => `Attempt #${v}`}
-          formatter={(value: number, name: string) => [
+          formatter={(value, name) => [
             `${value}`,
             CHALLENGES.find((c) => c.key === name)?.label ?? name,
           ]}

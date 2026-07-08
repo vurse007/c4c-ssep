@@ -49,11 +49,21 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      {/* Branding */}
+      <div className="text-center">
+        <h1 className="text-[28px] font-serif font-bold italic tracking-tight text-[#0E2554] flex items-center justify-center gap-2">
+          SSEP
+        </h1>
+        <p className="text-xs text-muted-foreground mt-1">
+          by Caring for Caregivers
+        </p>
+      </div>
+
+      <Card className="border-border/60 shadow-none">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl font-serif font-normal">Sign In</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your credentials to access your dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -64,7 +74,7 @@ export function LoginForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="you@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -75,7 +85,7 @@ export function LoginForm({
                   <Label htmlFor="password">Password</Label>
                   <Link
                     href="/auth/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-primary"
                   >
                     Forgot your password?
                   </Link>
@@ -90,14 +100,14 @@ export function LoginForm({
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
               <Link
                 href="/auth/sign-up"
-                className="underline underline-offset-4"
+                className="underline underline-offset-4 font-medium text-primary"
               >
                 Sign up
               </Link>

@@ -16,7 +16,7 @@ export default function Page() {
               <CardTitle className="text-2xl">
                 Thank you for signing up!
               </CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
+              <CardDescription></CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">

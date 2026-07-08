@@ -44,7 +44,17 @@ export function UpdatePasswordForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      {/* Branding */}
+      <div className="text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-[#0E2554] flex items-center justify-center gap-2">
+          SSEP
+        </h1>
+        <p className="text-xs text-muted-foreground mt-1">
+          by Caring for Caregivers
+        </p>
+      </div>
+
+      <Card className="border-border/60 shadow-none">
         <CardHeader>
           <CardTitle className="text-2xl">Reset Your Password</CardTitle>
           <CardDescription>

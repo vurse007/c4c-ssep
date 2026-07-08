@@ -46,8 +46,18 @@ export function ForgotPasswordForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      {/* Branding */}
+      <div className="text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-[#0E2554] flex items-center justify-center gap-2">
+          SSEP
+        </h1>
+        <p className="text-xs text-muted-foreground mt-1">
+          by Caring for Caregivers
+        </p>
+      </div>
+
       {success ? (
-        <Card>
+        <Card className="border-border/60 shadow-none">
           <CardHeader>
             <CardTitle className="text-2xl">Check Your Email</CardTitle>
             <CardDescription>Password reset instructions sent</CardDescription>
@@ -60,11 +70,11 @@ export function ForgotPasswordForm({
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="border-border/60 shadow-none">
           <CardHeader>
             <CardTitle className="text-2xl">Reset Your Password</CardTitle>
             <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
+              Enter your email and we&apos;ll send you a link to reset your
               password
             </CardDescription>
           </CardHeader>
@@ -76,7 +86,7 @@ export function ForgotPasswordForm({
                   <Input
                     id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="you@example.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -88,12 +98,12 @@ export function ForgotPasswordForm({
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
+                Remember your password?{" "}
                 <Link
                   href="/auth/login"
-                  className="underline underline-offset-4"
+                  className="underline underline-offset-4 font-medium text-primary"
                 >
-                  Login
+                  Sign in
                 </Link>
               </div>
             </form>

@@ -10,7 +10,18 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        serif: ['var(--font-libre)', 'Georgia', 'serif'],
+      },
       colors: {
+        citadel: {
+          navy: '#0C1829',
+          dark: '#07080D',
+          blue: '#1B3468',
+          accent: '#4A90D9',
+          logo: '#0E2554'
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -57,6 +68,15 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        fadeUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
+      },
+      animation: {
+        fadeUp: 'fadeUp 0.8s ease-out 0.3s both',
+      }
     },
   },
   plugins: [require("tailwindcss-animate")],

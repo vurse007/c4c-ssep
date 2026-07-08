@@ -27,8 +27,7 @@ export function HeroSection() {
           initial={{ clipPath: "inset(0 100% 0 0)" }}
           animate={{ clipPath: "inset(0 0% 0 0)" }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
-          className="absolute bottom-0 left-0 w-[95%] bg-[#1B3468]/50 border-t border-white/25 z-30"
-          style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)" }}
+          className="absolute bottom-0 left-0 w-[95%] bg-[#1B3468]/50 z-30"
         >
           <motion.div
             initial={{ opacity: 0 }}

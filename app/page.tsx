@@ -89,7 +89,7 @@ export default function Home() {
           </SlideInLeft>
           <FadeIn delay={0.2}>
             <p className="text-white/80 text-[15px] md:text-[16px] leading-[1.65] mb-8 max-w-lg">
-              Built with a partner neuroscience club and supported by the EmRes Program Network. Our program is connected with mentor and research links to UCLA, Stanford, and USF.
+              Built with a partner neuroscience club and supported by the EmRes Program Network. Our program is connected with mentor and research links to UCLA, Stanford, and UCSF.
             </p>
           </FadeIn>
         </div>
@@ -104,7 +104,7 @@ export default function Home() {
               <img src="/stanford.svg" alt="Stanford" className="h-[180px] w-auto opacity-100" />
             </FadeIn>
             <FadeIn delay={0.4} className="flex items-center justify-center">
-              <img src="/usf.svg" alt="USF" className="h-[130px] w-auto opacity-100" />
+              <img src="/ucsf.png" alt="UCSF" className="h-[170px] w-auto opacity-100" />
             </FadeIn>
           </div>
         </div>

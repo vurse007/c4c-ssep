@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function LoginForm({
   className,
@@ -25,6 +25,13 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  // Clear fields on every mount — prevents bfcache restoring stale credentials
+  // after sign-out or browser back navigation
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +83,7 @@ export function LoginForm({
                   type="email"
                   placeholder="you@example.com"
                   required
+                  autoComplete="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -94,6 +102,7 @@ export function LoginForm({
                   id="password"
                   type="password"
                   required
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />

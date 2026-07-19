@@ -6,10 +6,15 @@ const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
 
-export const metadata: Metadata = {
+export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "SSEP Dashboard",
-  description: "Together, We Turn Ambition Into Action.",
+  title: "SSEP Dashboard | Caring for Caregivers",
+  description:
+    "Research-backed resilience, wellness, and caregiver support programs by Caring for Caregivers and its partners.",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const inter = Inter({

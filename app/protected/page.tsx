@@ -10,32 +10,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BarChart2, CheckCircle2, Clock, Flame } from "lucide-react";
+import { BarChart2, CalendarDays, CheckCircle2, Flame } from "lucide-react";
 import { Suspense } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type RawResult = {
+  id: string;
   challenge: string;
   score: number;
   played_at: string;
 };
 
+const REQUIRED_TRIAL_DAYS = 7;
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildChartData(results: RawResult[]): ChartPoint[] {
-  // Sort all results chronologically
-  const sorted = [...results].sort((a, b) => a.played_at.localeCompare(b.played_at));
+  const sorted = [...results].sort((a, b) =>
+    a.played_at.localeCompare(b.played_at),
+  );
 
-  // Build per-challenge ordered score arrays
   const byChallenge: Record<string, number[]> = {};
   for (const r of sorted) {
     byChallenge[r.challenge] ??= [];
     byChallenge[r.challenge].push(r.score);
   }
 
-  // x-axis = attempt number (1-based), independent per challenge
-  const maxAttempts = Math.max(0, ...Object.values(byChallenge).map((s) => s.length));
+  const maxAttempts = Math.max(
+    0,
+    ...Object.values(byChallenge).map((s) => s.length),
+  );
 
   return Array.from({ length: maxAttempts }, (_, i) => {
     const point: ChartPoint = { attempt: i + 1 };
@@ -47,57 +52,45 @@ function buildChartData(results: RawResult[]): ChartPoint[] {
   });
 }
 
-function fmtTime(sec: number | null) {
-  if (sec === null) return "—";
-  if (sec < 60) return `${sec}s`;
-  return `${Math.floor(sec / 60)}m ${sec % 60}s`;
+function countDistinctDays(results: RawResult[]): number {
+  const days = new Set(
+    results.map((result) => result.played_at.slice(0, 10)),
+  );
+  return days.size;
 }
 
 // ── Sub-components (each does its own async data fetch) ──────────────────────
 
-async function UserGreeting() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-  if (error || !data?.claims) redirect("/auth/login");
-  return <TimeGreeting firstName={data.claims?.user_metadata?.first_name} />;
-}
-
-async function DashboardContent() {
+async function OverviewContent() {
   const supabase = await createClient();
 
-  // Auth guard
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const { data: claimsData, error: claimsError } =
+    await supabase.auth.getClaims();
   if (claimsError || !claimsData?.claims) redirect("/auth/login");
 
   const userId = claimsData.claims.sub;
 
-  // Fetch summary rows (only columns that exist in the new schema)
   const { data: results } = await supabase
     .from("challenge_results")
-    .select("challenge, score, played_at")
+    .select(
+      "id, challenge, score, played_at, official_challenge_workflows!inner(status)",
+    )
     .eq("user_id", userId)
+    .eq("is_official", true)
+    .eq("official_challenge_workflows.status", "completed")
     .order("played_at", { ascending: true });
 
-  // Fetch Wordle-specific rows for avg completion time stat
-  const { data: wordleRows } = await supabase
-    .from("wordle_results")
-    .select("completion_time_seconds, won")
-    .eq("user_id", userId);
+  const rows: RawResult[] = (results ?? []).map((result) => ({
+    id: result.id,
+    challenge: result.challenge,
+    score: result.score,
+    played_at: result.played_at,
+  }));
 
-  const rows: RawResult[] = results ?? [];
-  const wordle = wordleRows ?? [];
-
-  // ── Derived stats ──────────────────────────────────────────────────────────
   const totalAttempts = rows.length;
   const challengesTried = new Set(rows.map((r) => r.challenge)).size;
-
-  const wonWordle = wordle.filter((r) => r.won);
-  const avgCompletionSec =
-    wonWordle.length > 0
-      ? Math.round(wonWordle.reduce((s, r) => s + (r.completion_time_seconds ?? 0), 0) / wonWordle.length)
-      : null;
-
-  const avgScoreAll =
+  const distinctDays = countDistinctDays(rows);
+  const averageScoreAll =
     rows.length > 0
       ? Math.round(rows.reduce((s, r) => s + r.score, 0) / rows.length)
       : null;
@@ -106,34 +99,52 @@ async function DashboardContent() {
     {
       title: "Total Attempts",
       value: totalAttempts > 0 ? String(totalAttempts) : "—",
-      description: "Games played across all challenges",
+      description: "Official challenge attempts completed",
       icon: Flame,
     },
     {
       title: "Challenges Tried",
-      value: challengesTried > 0 ? `${challengesTried} / 6` : "—",
-      description: "Distinct challenges attempted",
+      value: challengesTried > 0 ? `${challengesTried} / 5` : "—",
+      description: "Distinct official challenges attempted",
       icon: CheckCircle2,
     },
     {
-      title: "Avg Completion Time",
-      value: fmtTime(avgCompletionSec),
-      description: "Average time per successful session",
-      icon: Clock,
+      title: "Days Participated",
+      value: distinctDays > 0 ? String(distinctDays) : "—",
+      description: "Distinct days with a completed official challenge",
+      icon: CalendarDays,
     },
     {
-      title: "Avg Score",
-      value: avgScoreAll !== null ? `${avgScoreAll}` : "—",
+      title: "Average Score",
+      value: averageScoreAll !== null ? `${averageScoreAll}` : "—",
       description: "Mean score across all challenges (0–100)",
       icon: BarChart2,
     },
   ];
 
   const chartData = buildChartData(rows);
+  const trialComplete = distinctDays >= REQUIRED_TRIAL_DAYS;
 
   return (
     <>
-      {/* Insight stat tiles */}
+      {trialComplete && (
+        <div className="border border-[#1B3468]/20 bg-[#1B3468]/5 px-5 py-4 text-sm leading-relaxed text-[#0E2554]">
+          Thank you for your participation in the Simulated Stress Exposure
+          Program. You have completed the required 7-day trial period. You are
+          welcome to continue using the portal for your personal benefit and to
+          provide additional data for our study.
+        </div>
+      )}
+
+      <div>
+        <TimeGreeting
+          firstName={claimsData.claims?.user_metadata?.first_name}
+        />
+        <p className="text-muted-foreground mt-1">
+          Here&apos;s an overview of your progress.
+        </p>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => {
           const Icon = stat.icon;
@@ -146,21 +157,24 @@ async function DashboardContent() {
                 <Icon size={16} className="text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                <div className="text-2xl font-bold text-foreground">
+                  {stat.value}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.description}
+                </p>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Performance graph */}
       <Card className="border-border/50 shadow-none">
         <CardHeader>
           <CardTitle className="text-lg">Performance Over Time</CardTitle>
           <CardDescription>
-            Score (0–100) per challenge across every attempt. Complete more
-            challenges to see additional lines appear.
+            Score (0–100) per challenge across every official attempt.
+            Practice puzzles are not included.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -171,37 +185,36 @@ async function DashboardContent() {
   );
 }
 
-// ── Skeleton fallbacks ────────────────────────────────────────────────────────
-
-function StatsSkeleton() {
+function OverviewSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i} className="border-border/50 shadow-none animate-pulse">
-          <CardHeader className="pb-2">
-            <div className="h-3 w-24 bg-muted rounded" />
-          </CardHeader>
-          <CardContent>
-            <div className="h-7 w-12 bg-muted rounded mb-2" />
-            <div className="h-3 w-32 bg-muted rounded" />
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-8">
+      <div>
+        <div className="h-8 w-64 bg-muted animate-pulse" />
+        <div className="mt-2 h-4 w-72 bg-muted animate-pulse" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="border-border/50 shadow-none animate-pulse">
+            <CardHeader className="pb-2">
+              <div className="h-3 w-24 bg-muted rounded" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-7 w-12 bg-muted rounded mb-2" />
+              <div className="h-3 w-32 bg-muted rounded" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Card className="border-border/50 shadow-none animate-pulse">
+        <CardHeader>
+          <div className="h-4 w-48 bg-muted rounded mb-2" />
+          <div className="h-3 w-72 bg-muted rounded" />
+        </CardHeader>
+        <CardContent>
+          <div className="h-[320px] bg-muted rounded" />
+        </CardContent>
+      </Card>
     </div>
-  );
-}
-
-function ChartSkeleton() {
-  return (
-    <Card className="border-border/50 shadow-none animate-pulse">
-      <CardHeader>
-        <div className="h-4 w-48 bg-muted rounded mb-2" />
-        <div className="h-3 w-72 bg-muted rounded" />
-      </CardHeader>
-      <CardContent>
-        <div className="h-[320px] bg-muted rounded" />
-      </CardContent>
-    </Card>
   );
 }
 
@@ -210,24 +223,8 @@ function ChartSkeleton() {
 export default function ProtectedPage() {
   return (
     <div className="max-w-5xl space-y-8">
-      {/* Greeting */}
-      <div>
-        <Suspense fallback={<h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>}>
-          <UserGreeting />
-        </Suspense>
-        <p className="text-muted-foreground mt-1">
-          Here&apos;s an overview of your progress.
-        </p>
-      </div>
-
-      {/* Stats + chart — streamed in once data is ready */}
-      <Suspense fallback={
-        <div className="space-y-8">
-          <StatsSkeleton />
-          <ChartSkeleton />
-        </div>
-      }>
-        <DashboardContent />
+      <Suspense fallback={<OverviewSkeleton />}>
+        <OverviewContent />
       </Suspense>
     </div>
   );

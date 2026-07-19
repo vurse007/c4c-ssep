@@ -13,6 +13,22 @@ const KEYBOARD_ROWS = [
 
 type TileState = "correct" | "present" | "absent" | "empty";
 
+export type WordleResult = {
+  score: number;
+  completion_time_seconds: number;
+  guesses: number;
+  won: boolean;
+  target_word: string;
+};
+
+type WordleGameProps = {
+  target: string;
+  onComplete?: (result: WordleResult) => void | Promise<void>;
+  onStartAnother?: () => void;
+  startAnotherLabel?: string;
+  startAnotherDisabled?: boolean;
+};
+
 function evaluateGuess(guess: string, target: string): TileState[] {
   const result: TileState[] = Array(WORD_LENGTH).fill("absent");
   const targetArr = target.split("");
@@ -39,37 +55,16 @@ function evaluateGuess(guess: string, target: string): TileState[] {
 
 /**
  * Score formula (0–100):
- *   • 70 pts based on guess count (1 guess = 70, 6 guesses ≈ 12)
- *   • 30 pts based on speed    (≤60 s = full, ≥300 s = 0)
+ *   • 30-point baseline for a win
+ *   • Up to 40 pts based on guess count
+ *   • Up to 20 pts based on speed
  *   • Loss = 0
  */
 function computeScore(numGuesses: number, seconds: number, won: boolean): number {
   if (!won) return 0;
-  const guessScore = ((7 - numGuesses) / 6) * 70;
-  const timeScore = (Math.max(0, 300 - seconds) / 300) * 30;
-  return Math.round(guessScore + timeScore);
-}
-
-async function saveResult(params: {
-  score: number;
-  completion_time_seconds: number;
-  guesses: number;
-  won: boolean;
-  target_word: string;
-}) {
-  try {
-    const res = await fetch("/api/challenge-result", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ challenge: "wordle", ...params }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      console.error("[Wordle] Failed to save result:", body.error ?? res.status);
-    }
-  } catch (err) {
-    console.error("[Wordle] Unexpected error saving result:", err);
-  }
+  const guessScore = ((7 - numGuesses) / 6) * 40;
+  const timeScore = (Math.max(0, 300 - seconds) / 300) * 20;
+  return Math.round(30 + guessScore + timeScore);
 }
 
 function tileClass(state: TileState, filled: boolean): string {
@@ -91,7 +86,14 @@ function keyClass(key: string, letterStates: Record<string, TileState>): string 
   return `${base} ${size} bg-[#d3d6da] text-[#111111] hover:bg-[#c0c4c8]`;
 }
 
-export function WordleGame({ target: initialTarget }: { target: string }) {
+export function WordleGame({
+  target: initialTarget,
+  onComplete,
+  onStartAnother,
+  startAnotherLabel = "Start Another Challenge",
+  startAnotherDisabled = false,
+}: WordleGameProps) {
+  const [started, setStarted] = useState(false);
   const [target, setTarget] = useState(initialTarget);
   const [guesses, setGuesses] = useState<string[]>([]);
   const [current, setCurrent] = useState("");
@@ -120,14 +122,14 @@ export function WordleGame({ target: initialTarget }: { target: string }) {
     const seconds = Math.round((Date.now() - startTime.current) / 1000);
     const numGuesses = finalGuesses.length;
     const score = computeScore(numGuesses, seconds, didWin);
-    saveResult({
+    void onComplete?.({
       score,
       completion_time_seconds: seconds,
       guesses: numGuesses,
       won: didWin,
       target_word: target,
     });
-  }, [target]);
+  }, [onComplete, target]);
 
   const submitGuess = useCallback(async () => {
     if (current.length < WORD_LENGTH) {
@@ -176,13 +178,19 @@ export function WordleGame({ target: initialTarget }: { target: string }) {
   }, [gameOver, validating, current, submitGuess]);
 
   useEffect(() => {
+    if (!started) return;
     const onKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toUpperCase();
       handleKey(key === "BACKSPACE" ? "⌫" : key);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleKey]);
+  }, [handleKey, started]);
+
+  const startGame = useCallback(() => {
+    startTime.current = Date.now();
+    setStarted(true);
+  }, []);
 
   const resetGame = useCallback(async () => {
     setLoading(true);
@@ -198,9 +206,31 @@ export function WordleGame({ target: initialTarget }: { target: string }) {
     setError("");
     setGameOver(false);
     setWon(false);
+    setStarted(false);
     setLoading(false);
-    startTime.current = Date.now();
   }, []);
+
+  if (!started) {
+    return (
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+        <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
+          Wordle
+        </p>
+        <h2 className="mt-3 font-serif text-3xl">Guess the word</h2>
+        <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+          Find the hidden 5-letter word in six tries. After each guess, tiles
+          show which letters are correct and in the right place.
+        </p>
+        <button
+          type="button"
+          onClick={startGame}
+          className="mt-8 bg-[#1B3468] px-8 py-3 text-sm font-medium text-white"
+        >
+          Start Wordle
+        </button>
+      </div>
+    );
+  }
 
   const rows = Array.from({ length: MAX_GUESSES }, (_, r) => {
     if (r < guesses.length) {
@@ -241,11 +271,15 @@ export function WordleGame({ target: initialTarget }: { target: string }) {
               </p>
             )}
             <button
-              onClick={resetGame}
-              disabled={loading}
+              onClick={onStartAnother ?? resetGame}
+              disabled={loading || startAnotherDisabled}
               className="px-5 py-2 text-[13px] font-semibold bg-[#111111] text-white rounded-sm hover:bg-[#333] transition-colors disabled:opacity-50"
             >
-              {loading ? "Loading…" : "Play Again"}
+              {loading
+                ? "Loading…"
+                : onStartAnother
+                  ? startAnotherLabel
+                  : "Play Again"}
             </button>
           </div>
         )}

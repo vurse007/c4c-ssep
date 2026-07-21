@@ -1,27 +1,33 @@
 export const STRESS_TECHNIQUES = [
   {
+    key: "54321_grounding",
+    label: "5-4-3-2-1 Sense Grounding",
+    description:
+      "Identify 5 things you can see, 4 you can feel, 3 you can hear, 2 you can smell, and 1 you can taste to redirect attention away from stress.",
+  },
+  {
     key: "box_breathing",
     label: "Box Breathing",
     description:
-      "Breathe in, hold, breathe out, and hold again for equal counts to steady your breathing and attention.",
+      "Complete 4 rounds of box breathing: inhale 4 seconds, hold 4 seconds, exhale 4 seconds, and hold 4 seconds to slow your heart rate and regain focus.",
   },
   {
-    key: "54321_grounding",
-    label: "5-4-3-2-1 Grounding",
+    key: "aromatherapy",
+    label: "Aromatherapy",
     description:
-      "Name five things you see, four you feel, three you hear, two you smell, and one you taste to reconnect with the present.",
+      "Place 3–5 drops of essential oil on gauze and take 4 slow breaths while focusing on the scent to promote relaxation.",
   },
   {
-    key: "emotional_resolution",
-    label: "Emotional Resolution",
+    key: "gratitude_exercise",
+    label: "Gratitude Exercise",
     description:
-      "Notice the physical sensations connected to an emotion without analyzing them until their intensity begins to ease.",
+      "Write down three things you are grateful for today and briefly reflect on why each is meaningful to shift your mindset toward positive experiences.",
   },
   {
-    key: "single_sense_anchoring",
-    label: "Single-sense Anchoring",
+    key: "cold_therapy",
+    label: "Cold Therapy",
     description:
-      "Focus closely on one sensory experience, such as a sound or physical sensation, to anchor attention in the present.",
+      "Expose your face to cold water for 30–60 seconds, or take a cold shower, while focusing on slow, controlled breathing to help your body recover from stress.",
   },
 ] as const;
 

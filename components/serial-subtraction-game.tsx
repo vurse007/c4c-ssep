@@ -107,6 +107,7 @@ export function SerialSubtractionGame({
   const [secondsRemaining, setSecondsRemaining] =
     useState(DURATION_SECONDS);
   const [input, setInput] = useState("");
+  const [lastResponse, setLastResponse] = useState<number | null>(null);
   const [finalResult, setFinalResult] =
     useState<SerialSubtractionResult | null>(null);
 
@@ -162,6 +163,7 @@ export function SerialSubtractionGame({
     deadlineRef.current = Date.now() + DURATION_SECONDS * 1000;
     responseStartedAtRef.current = Date.now();
     setInput("");
+    setLastResponse(null);
     setFinalResult(null);
     setSecondsRemaining(DURATION_SECONDS);
     setGameState("running");
@@ -173,6 +175,7 @@ export function SerialSubtractionGame({
     setGameState("ready");
     setSecondsRemaining(DURATION_SECONDS);
     setInput("");
+    setLastResponse(null);
     setFinalResult(null);
     metricsRef.current = { ...INITIAL_METRICS };
     finishedRef.current = false;
@@ -212,6 +215,7 @@ export function SerialSubtractionGame({
       // create cascading errors on subsequent correct arithmetic.
       previousValueRef.current = submittedValue;
       responseStartedAtRef.current = Date.now();
+      setLastResponse(submittedValue);
       setInput("");
       window.setTimeout(() => inputRef.current?.focus(), 0);
     },
@@ -308,6 +312,12 @@ export function SerialSubtractionGame({
         onSubmit={submitAnswer}
         className="flex flex-1 flex-col items-center justify-center"
       >
+        <p className="mb-6 text-sm text-muted-foreground">
+          Your last response:{" "}
+          <span className="font-semibold text-foreground">
+            {lastResponse ?? "—"}
+          </span>
+        </p>
         <label
           htmlFor="serial-answer"
           className="mb-3 text-sm text-muted-foreground"

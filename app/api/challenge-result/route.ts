@@ -16,7 +16,7 @@ function wordleScore(guesses: number, seconds: number, won: boolean) {
 
 function stroopScore(correct: number, total: number) {
   if (total === 0) return 0;
-  const throughputScore = Math.min(correct / 60, 1) * 70;
+  const throughputScore = Math.min(correct / 23, 1) * 70;
   const accuracyScore = (correct / total) * 30;
   return Math.round(Math.min(100, throughputScore + accuracyScore));
 }
@@ -102,7 +102,7 @@ function validateStroop(body: ResultBody) {
   } = body;
 
   if (
-    duration_seconds !== 60 ||
+    duration_seconds !== 15 ||
     !isInteger(total_responses) ||
     !isInteger(correct_responses) ||
     !isInteger(incorrect_responses) ||

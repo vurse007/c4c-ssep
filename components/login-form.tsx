@@ -56,19 +56,11 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {/* Branding */}
-      <div className="text-center">
-        <h1 className="text-[28px] font-serif font-bold italic tracking-tight text-[#0E2554] flex items-center justify-center gap-2">
-          SSEP
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          by Caring for Caregivers
-        </p>
-      </div>
-
-      <Card className="border-border/60 shadow-none">
+      <Card className="border-white/40 bg-white/95 shadow-[0_12px_40px_rgba(0,0,0,0.18)] backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-2xl font-serif font-normal">Sign In</CardTitle>
+          <CardTitle className="text-2xl font-serif font-normal">
+            Sign In
+          </CardTitle>
           <CardDescription>
             Enter your credentials to access your dashboard
           </CardDescription>

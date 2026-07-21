@@ -8,9 +8,8 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { motion } from "motion/react";
 
-const PRESENTATION_MS = 1500;
+const STUDY_SECONDS = 15;
 const ITEMS_TOTAL = 21;
 const LEVELS = [
   { level: 1 as const, perCategory: 3 },
@@ -176,8 +175,7 @@ export function StructuredListRecallGame({
   const [gameState, setGameState] = useState<GameState>("ready");
   const [levelIndex, setLevelIndex] = useState(0);
   const [sequence, setSequence] = useState<ListItem[]>([]);
-  const [displayWord, setDisplayWord] = useState<string | null>(null);
-  const [presentationStep, setPresentationStep] = useState(0);
+  const [secondsRemaining, setSecondsRemaining] = useState(STUDY_SECONDS);
   const [responses, setResponses] =
     useState<CategoryResponses>(EMPTY_RESPONSES);
   const [drafts, setDrafts] = useState<Record<ListCategory, string>>({
@@ -249,28 +247,24 @@ export function StructuredListRecallGame({
     setSequence(nextSequence);
     setResponses({ fruits: [], clothing: [], names: [] });
     setDrafts({ fruits: "", clothing: "", names: "" });
-    setDisplayWord(null);
-    setPresentationStep(0);
+    setSecondsRemaining(STUDY_SECONDS);
     setGameState("presenting");
 
-    let wordIndex = 0;
-    const showNextWord = () => {
-      if (wordIndex >= nextSequence.length) {
-        setDisplayWord(null);
+    const deadline = Date.now() + STUDY_SECONDS * 1000;
+    const tick = () => {
+      const remaining = Math.max(
+        0,
+        Math.ceil((deadline - Date.now()) / 1000),
+      );
+      setSecondsRemaining(remaining);
+      if (remaining === 0) {
         setGameState("recall");
         return;
       }
-
-      setPresentationStep(wordIndex);
-      setDisplayWord(nextSequence[wordIndex].word);
-      wordIndex += 1;
-      presentationTimerRef.current = window.setTimeout(
-        showNextWord,
-        PRESENTATION_MS,
-      );
+      presentationTimerRef.current = window.setTimeout(tick, 200);
     };
 
-    presentationTimerRef.current = window.setTimeout(showNextWord, 250);
+    presentationTimerRef.current = window.setTimeout(tick, 200);
   }, []);
 
   const startGame = useCallback(() => {
@@ -287,8 +281,7 @@ export function StructuredListRecallGame({
     setGameState("ready");
     setLevelIndex(0);
     setSequence([]);
-    setDisplayWord(null);
-    setPresentationStep(0);
+    setSecondsRemaining(STUDY_SECONDS);
     setResponses(EMPTY_RESPONSES);
     setDrafts({ fruits: "", clothing: "", names: "" });
     setLevelDetails([]);
@@ -396,8 +389,8 @@ export function StructuredListRecallGame({
         </p>
         <h2 className="mt-3 font-serif text-3xl">Memorize, then sort</h2>
         <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-          Words from fruits, clothing, and names will appear one at a time.
-          After each list, type what you remember into the matching category
+          A mixed list of fruits, clothing, and names will appear all at once
+          for 15 seconds. Then type what you remember into the matching category
           boxes.
         </p>
         <p className="mt-3 text-sm text-muted-foreground">
@@ -450,21 +443,28 @@ export function StructuredListRecallGame({
   if (gameState === "presenting") {
     const config = LEVELS[levelIndex];
     return (
-      <div className="relative min-h-[430px] border border-black/10 bg-white px-8 py-7 flex flex-col items-center justify-center">
-        <p className="absolute left-8 top-7 text-sm text-muted-foreground">
-          Level {config.level} of {LEVELS.length} · {sequence.length} words
+      <div className="relative min-h-[430px] border border-black/10 bg-white px-8 py-7 flex flex-col">
+        <p className="text-sm text-muted-foreground">
+          Level {config.level} of {LEVELS.length} · Memorize these{" "}
+          {sequence.length} words
         </p>
-        {displayWord !== null && (
-          <motion.p
-            key={`${levelIndex}-${presentationStep}`}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="font-sans text-5xl font-bold tracking-wide"
-          >
-            {displayWord}
-          </motion.p>
-        )}
+        <p
+          className={`absolute right-8 top-7 text-sm font-semibold ${
+            secondsRemaining <= 5 ? "text-red-600" : "text-foreground"
+          }`}
+        >
+          {secondsRemaining}s remaining
+        </p>
+        <div className="mt-10 flex flex-1 flex-wrap content-center justify-center gap-3">
+          {sequence.map((item) => (
+            <span
+              key={`${item.category}-${item.word}`}
+              className="border border-black/15 bg-[#fafafa] px-4 py-2 text-lg font-medium"
+            >
+              {item.word}
+            </span>
+          ))}
+        </div>
       </div>
     );
   }

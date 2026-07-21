@@ -26,7 +26,8 @@ const choiceClass =
 export function PreChallengeSurvey({ onSubmit }: Props) {
   const [technique, setTechnique] =
     useState<StressTechniqueKey | null>(null);
-  const [stressLevel, setStressLevel] = useState(5);
+  const [stressLevel, setStressLevel] = useState(50);
+  const [currentBpm, setCurrentBpm] = useState("");
   const [dayPace, setDayPace] = useState<DayPace | null>(null);
   const [focusEffort, setFocusEffort] =
     useState<FocusEffort | null>(null);
@@ -53,8 +54,16 @@ export function PreChallengeSurvey({ onSubmit }: Props) {
     });
   };
 
+  const bpmValue = Number(currentBpm);
+  const bpmValid =
+    currentBpm.trim().length > 0 &&
+    Number.isInteger(bpmValue) &&
+    bpmValue >= 30 &&
+    bpmValue <= 220;
+
   const canSubmit =
     technique !== null &&
+    bpmValid &&
     dayPace !== null &&
     focusEffort !== null &&
     bodyFeelings.length > 0 &&
@@ -68,6 +77,7 @@ export function PreChallengeSurvey({ onSubmit }: Props) {
       await onSubmit({
         stress_management_technique: technique,
         pre_stress_level: stressLevel,
+        pre_current_bpm: bpmValue,
         pre_day_pace: dayPace,
         pre_focus_effort: focusEffort,
         pre_body_feelings: bodyFeelings,
@@ -103,7 +113,7 @@ export function PreChallengeSurvey({ onSubmit }: Props) {
       <div className="mt-16 space-y-32">
       <section className="space-y-4">
         <h2 className="font-serif text-xl">
-          What stress management technique did you use?
+          What coping strategy did you use?
         </h2>
         <div className="grid gap-3">
           {STRESS_TECHNIQUES.map((option) => {
@@ -141,18 +151,38 @@ export function PreChallengeSurvey({ onSubmit }: Props) {
           <h2 className="font-serif text-xl">
             Current stress level
           </h2>
-          <span className="text-lg font-medium">{stressLevel}</span>
+          <span className="text-lg font-medium">{stressLevel}%</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          1 = no stress, 10 = highest stress
+          0% = no stress, 100% = highest stress
         </p>
         <input
           type="range"
-          min={1}
-          max={10}
+          min={0}
+          max={100}
           value={stressLevel}
           onChange={(event) => setStressLevel(Number(event.target.value))}
           className="w-full accent-[#1B3468]"
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-serif text-xl">
+          What is your current BPM?
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Enter your heart rate in beats per minute.
+        </p>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={currentBpm}
+          onChange={(event) =>
+            setCurrentBpm(event.target.value.replace(/\D/g, "").slice(0, 3))
+          }
+          placeholder="e.g. 72"
+          className="w-full max-w-xs border border-black/20 bg-white px-4 py-3 text-sm outline-none focus:border-[#1B3468]"
         />
       </section>
 
@@ -220,7 +250,7 @@ export function PreChallengeSurvey({ onSubmit }: Props) {
       </section>
       </div>
 
-      <div className="mt-10 space-y-4">
+      <div className="mt-32 space-y-4">
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <button

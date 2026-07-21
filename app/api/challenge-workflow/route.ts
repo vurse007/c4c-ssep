@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
   const {
     stress_management_technique,
     pre_stress_level,
+    pre_current_bpm,
     pre_day_pace,
     pre_focus_effort,
     pre_body_feelings,
@@ -93,7 +94,8 @@ export async function POST(req: NextRequest) {
 
   if (
     !isStressTechnique(stress_management_technique) ||
-    !isIntegerInRange(pre_stress_level, 1, 10) ||
+    !isIntegerInRange(pre_stress_level, 0, 100) ||
+    !isIntegerInRange(pre_current_bpm, 30, 220) ||
     !isOption(pre_day_pace, DAY_PACE_OPTIONS) ||
     !isOption(pre_focus_effort, FOCUS_EFFORT_OPTIONS) ||
     !isOptionArray(pre_body_feelings, BODY_FEELING_OPTIONS) ||
@@ -113,6 +115,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       stress_management_technique,
       pre_stress_level,
+      pre_current_bpm,
       pre_day_pace,
       pre_focus_effort,
       pre_body_feelings,
@@ -195,12 +198,12 @@ export async function PATCH(req: NextRequest) {
 
     if (
       workflow.checkpoint !== "post_survey" ||
-      !isIntegerInRange(post_stress_level, 1, 10) ||
-      !isIntegerInRange(post_strategy_confidence, 1, 10) ||
+      !isIntegerInRange(post_stress_level, 0, 100) ||
+      !isIntegerInRange(post_strategy_confidence, 0, 100) ||
       !isOptionArray(post_noticed_changes, NOTICED_CHANGE_OPTIONS) ||
       (noChange && post_noticed_changes.length !== 1) ||
       !isOption(post_future_confidence, FUTURE_CONFIDENCE_OPTIONS) ||
-      !isIntegerInRange(post_strategy_effectiveness, 1, 10)
+      !isIntegerInRange(post_strategy_effectiveness, 0, 100)
     ) {
       return NextResponse.json(
         { error: "Complete every post-challenge survey question" },

@@ -15,12 +15,12 @@ type Props = {
 };
 
 export function PostChallengeSurvey({ onSubmit }: Props) {
-  const [stressLevel, setStressLevel] = useState(5);
-  const [strategyConfidence, setStrategyConfidence] = useState(5);
+  const [stressLevel, setStressLevel] = useState(50);
+  const [strategyConfidence, setStrategyConfidence] = useState(50);
   const [noticedChanges, setNoticedChanges] = useState<NoticedChange[]>([]);
   const [futureConfidence, setFutureConfidence] =
     useState<FutureConfidence | null>(null);
-  const [effectiveness, setEffectiveness] = useState(5);
+  const [effectiveness, setEffectiveness] = useState(50);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,19 +81,21 @@ export function PostChallengeSurvey({ onSubmit }: Props) {
       <div className="mt-16 space-y-32">
       <SliderQuestion
         title="Current stress level"
-        description="1 = no stress, 10 = highest stress"
+        description="0% = no stress, 100% = highest stress"
         value={stressLevel}
-        minimum={1}
-        maximum={10}
+        minimum={0}
+        maximum={100}
+        suffix="%"
         onChange={setStressLevel}
       />
 
       <SliderQuestion
         title="How confident are you in your ability to manage stressful situations after using this strategy?"
-        description="1 = no confidence, 10 = complete confidence"
+        description="0% = no confidence, 100% = complete confidence"
         value={strategyConfidence}
-        minimum={1}
-        maximum={10}
+        minimum={0}
+        maximum={100}
+        suffix="%"
         onChange={setStrategyConfidence}
       />
 
@@ -162,15 +164,16 @@ export function PostChallengeSurvey({ onSubmit }: Props) {
 
       <SliderQuestion
         title="How effective was this coping strategy for improving your focus, mood, or performance today?"
-        description="1 = not effective, 10 = extremely effective"
+        description="0% = not effective, 100% = extremely effective"
         value={effectiveness}
-        minimum={1}
-        maximum={10}
+        minimum={0}
+        maximum={100}
+        suffix="%"
         onChange={setEffectiveness}
       />
       </div>
 
-      <div className="mt-10 space-y-4">
+      <div className="mt-32 space-y-4">
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <button

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 
-const DURATION_SECONDS = 60;
+const DURATION_SECONDS = 15;
 const COLORS = ["red", "green", "blue", "yellow"] as const;
 
 type StroopColor = (typeof COLORS)[number];
@@ -76,7 +77,9 @@ export function computeStroopScore(
   if (totalResponses === 0) return 0;
 
   const accuracy = correctResponses / totalResponses;
-  const throughputScore = Math.min(correctResponses / 60, 1) * 70;
+  // Linear scale. ~15–17 correct at ~90% accuracy ≈ 70.
+  // 100 needs 24 correct in 15s with perfect accuracy.
+  const throughputScore = Math.min(correctResponses / 24, 1) * 70;
   const accuracyScore = accuracy * 30;
 
   return Math.round(Math.min(100, throughputScore + accuracyScore));
@@ -117,6 +120,7 @@ export function StroopGame({
     word: "red",
     ink: "red",
   });
+  const [stimulusStep, setStimulusStep] = useState(0);
   const [finalResult, setFinalResult] = useState<StroopResult | null>(null);
 
   const metricsRef = useRef<Metrics>({ ...INITIAL_METRICS });
@@ -164,6 +168,7 @@ export function StroopGame({
     setFinalResult(null);
     setSecondsRemaining(DURATION_SECONDS);
     setStimulus(nextStimulus);
+    setStimulusStep(0);
     setGameState("running");
   }, []);
 
@@ -194,6 +199,7 @@ export function StroopGame({
       };
 
       setStimulus(createStimulus());
+      setStimulusStep((step) => step + 1);
       stimulusStartedAtRef.current = Date.now();
     },
     [finishGame, gameState, stimulus],
@@ -223,14 +229,14 @@ export function StroopGame({
         <h2 className="font-serif text-2xl">Ready to begin?</h2>
         <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
           Select the ink color of each word, not the color named by the word.
-          You will have 60 seconds to answer as many as you can.
+          You will have 15 seconds to answer as many as you can.
         </p>
         <button
           type="button"
           onClick={startGame}
           className="mt-7 bg-[#1B3468] px-8 py-3 text-sm font-medium text-white"
         >
-          Start 60-Second Task
+          Start 15-Second Task
         </button>
       </div>
     );
@@ -284,19 +290,23 @@ export function StroopGame({
       </p>
       <p
         className={`absolute right-8 top-7 text-sm font-semibold ${
-          secondsRemaining <= 10 ? "text-red-600" : "text-foreground"
+          secondsRemaining <= 5 ? "text-red-600" : "text-foreground"
         }`}
       >
         {secondsRemaining}s remaining
       </p>
 
       <div className="flex flex-1 items-center justify-center">
-        <p
+        <motion.p
+          key={stimulusStep}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="font-sans text-6xl font-bold uppercase tracking-wide"
           style={{ color: INK_COLORS[stimulus.ink] }}
         >
           {stimulus.word}
-        </p>
+        </motion.p>
       </div>
 
       <div className="grid grid-cols-4 gap-3">

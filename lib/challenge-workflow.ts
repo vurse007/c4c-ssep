@@ -77,6 +77,7 @@ export type WorkflowCheckpoint =
 export type PreSurveyData = {
   stress_management_technique: StressTechniqueKey;
   pre_stress_level: number;
+  pre_current_bpm: number;
   pre_day_pace: DayPace;
   pre_focus_effort: FocusEffort;
   pre_body_feelings: BodyFeeling[];

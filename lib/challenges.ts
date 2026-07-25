@@ -38,4 +38,4 @@ export const CHALLENGES = [
 
 export type ChallengeKey = typeof CHALLENGES[number]["key"];
 
-export type ChartPoint = { attempt: number } & Partial<Record<ChallengeKey, number>>;
+export type ChartPoint = { day: number } & Partial<Record<ChallengeKey, number>>;

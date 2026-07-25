@@ -35,15 +35,15 @@ export function PerformanceChart({ data }: Props) {
       <LineChart data={data} margin={{ top: 8, right: 24, left: -8, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis
-          dataKey="attempt"
+          dataKey="day"
           type="number"
           domain={[1, "dataMax"]}
           tickCount={Math.min(data.length, 10)}
-          tickFormatter={(v) => `#${v}`}
+          tickFormatter={(v) => `${v}`}
           tick={{ fontSize: 11, fill: "#9ca3af" }}
           tickLine={false}
           axisLine={{ stroke: "#e5e7eb" }}
-          label={{ value: "Attempt", position: "insideBottomRight", offset: -4, fontSize: 11, fill: "#9ca3af" }}
+          label={{ value: "Day", position: "insideBottomRight", offset: -4, fontSize: 11, fill: "#9ca3af" }}
         />
         <YAxis
           domain={[0, 100]}
@@ -59,7 +59,7 @@ export function PerformanceChart({ data }: Props) {
             border: "1px solid #e5e7eb",
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           }}
-          labelFormatter={(v) => `Attempt #${v}`}
+          labelFormatter={(v) => `Day ${v}`}
           formatter={(value, name) => [
             `${value}`,
             CHALLENGES.find((c) => c.key === name)?.label ?? name,
@@ -82,7 +82,7 @@ export function PerformanceChart({ data }: Props) {
             strokeWidth={2}
             dot={{ r: 3, strokeWidth: 0, fill: c.color }}
             activeDot={{ r: 5 }}
-            connectNulls={false}
+            connectNulls
             /* dim lines that have no data yet */
             strokeOpacity={activeChallenges.some((a) => a.key === c.key) ? 1 : 0.15}
           />

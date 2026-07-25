@@ -12,6 +12,13 @@ import {
   isOptionArray,
 } from "@/lib/challenge-workflow";
 import { isStressTechnique } from "@/lib/stress-techniques";
+import {
+  getDateInTimeZone,
+  normalizeTimeZone,
+} from "@/lib/local-day";
+
+const ALREADY_COMPLETED_MESSAGE =
+  "You've already completed your challenge for today. Come back tomorrow.";
 
 async function getAuthenticatedContext() {
   const supabase = await createClient();
@@ -35,10 +42,43 @@ async function getActiveWorkflow(
     .maybeSingle();
 }
 
-export async function GET() {
+async function hasCompletedToday(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  timeZone: string,
+) {
+  const cutoff = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("official_challenge_workflows")
+    .select("completed_at")
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .gte("completed_at", cutoff);
+
+  if (error) return { completedToday: false, error };
+
+  const today = getDateInTimeZone(new Date(), timeZone);
+  return {
+    completedToday: (data ?? []).some(
+      (workflow) =>
+        workflow.completed_at &&
+        getDateInTimeZone(new Date(workflow.completed_at), timeZone) === today,
+    ),
+    error: null,
+  };
+}
+
+export async function GET(req: NextRequest) {
   const { supabase, user } = await getAuthenticatedContext();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const timeZone = normalizeTimeZone(
+    req.nextUrl.searchParams.get("timeZone"),
+  );
+  if (!timeZone) {
+    return NextResponse.json({ error: "Invalid time zone" }, { status: 400 });
   }
 
   const { data, error } = await getActiveWorkflow(supabase, user.id);
@@ -46,13 +86,30 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ workflow: data ?? null });
+  const dailyStatus = await hasCompletedToday(supabase, user.id, timeZone);
+  if (dailyStatus.error) {
+    return NextResponse.json(
+      { error: dailyStatus.error.message },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({
+    workflow: data ?? null,
+    completedToday: dailyStatus.completedToday,
+  });
 }
 
 export async function POST(req: NextRequest) {
   const { supabase, user } = await getAuthenticatedContext();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const timeZone = normalizeTimeZone(body.time_zone);
+  if (!timeZone) {
+    return NextResponse.json({ error: "Invalid time zone" }, { status: 400 });
   }
 
   const { data: active, error: activeError } = await getActiveWorkflow(
@@ -72,7 +129,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = await req.json();
+  const dailyStatus = await hasCompletedToday(supabase, user.id, timeZone);
+  if (dailyStatus.error) {
+    return NextResponse.json(
+      { error: dailyStatus.error.message },
+      { status: 500 },
+    );
+  }
+  if (dailyStatus.completedToday) {
+    return NextResponse.json(
+      { error: ALREADY_COMPLETED_MESSAGE, completedToday: true },
+      { status: 409 },
+    );
+  }
+
   const {
     stress_management_technique,
     pre_stress_level,
@@ -184,6 +254,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (body.action === "complete_post_survey") {
+    const timeZone = normalizeTimeZone(body.time_zone);
     const {
       post_stress_level,
       post_strategy_confidence,
@@ -197,6 +268,7 @@ export async function PATCH(req: NextRequest) {
       post_noticed_changes.includes("no_change");
 
     if (
+      !timeZone ||
       workflow.checkpoint !== "post_survey" ||
       !isIntegerInRange(post_stress_level, 0, 100) ||
       !isIntegerInRange(post_strategy_confidence, 0, 100) ||
@@ -223,6 +295,8 @@ export async function PATCH(req: NextRequest) {
         checkpoint: "completed",
         status: "completed",
         completed_at: now,
+        completion_local_date: getDateInTimeZone(new Date(now), timeZone),
+        completion_time_zone: timeZone,
         updated_at: now,
       })
       .eq("id", workflow.id)
@@ -231,6 +305,12 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { error: ALREADY_COMPLETED_MESSAGE, completedToday: true },
+          { status: 409 },
+        );
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ workflow: data });

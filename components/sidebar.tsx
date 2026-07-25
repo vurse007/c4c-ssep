@@ -9,6 +9,7 @@ import {
   Play,
   Settings,
 } from "lucide-react";
+import { getBrowserTimeZone } from "@/lib/local-day";
 
 const navItems = [
   { label: "Overview", href: "/protected", icon: LayoutDashboard },
@@ -20,13 +21,18 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [hasActiveWorkflow, setHasActiveWorkflow] = useState(false);
+  const [completedToday, setCompletedToday] = useState(false);
 
   const refreshWorkflowStatus = useCallback(async () => {
     try {
-      const response = await fetch("/api/challenge-workflow");
+      const params = new URLSearchParams({
+        timeZone: getBrowserTimeZone(),
+      });
+      const response = await fetch(`/api/challenge-workflow?${params}`);
       if (!response.ok) return;
       const body = await response.json();
       setHasActiveWorkflow(Boolean(body.workflow));
+      setCompletedToday(Boolean(body.completedToday));
     } catch {
       // Navigation remains usable if workflow status cannot be loaded.
     }
@@ -34,15 +40,34 @@ export function Sidebar() {
 
   useEffect(() => {
     void refreshWorkflowStatus();
+    let midnightTimer: ReturnType<typeof setTimeout>;
+    const scheduleMidnightRefresh = () => {
+      const now = new Date();
+      const nextMidnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+      );
+      midnightTimer = setTimeout(() => {
+        void refreshWorkflowStatus();
+        scheduleMidnightRefresh();
+      }, nextMidnight.getTime() - now.getTime() + 100);
+    };
+
+    scheduleMidnightRefresh();
     window.addEventListener(
       "ssep:challenge-workflow-changed",
       refreshWorkflowStatus,
     );
-    return () =>
+    window.addEventListener("focus", refreshWorkflowStatus);
+    return () => {
+      clearTimeout(midnightTimer);
       window.removeEventListener(
         "ssep:challenge-workflow-changed",
         refreshWorkflowStatus,
       );
+      window.removeEventListener("focus", refreshWorkflowStatus);
+    };
   }, [refreshWorkflowStatus]);
 
   return (
@@ -61,6 +86,46 @@ export function Sidebar() {
             pathname === item.href ||
             (item.href !== "/protected" && pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
+          const isChallengeItem =
+            item.href === "/protected/start-challenge";
+          const isUnavailable =
+            isChallengeItem && completedToday && !hasActiveWorkflow;
+          const itemContent = (
+            <>
+              <Icon
+                size={18}
+                className={
+                  isActive ? "text-primary" : "text-primary-foreground/80"
+                }
+              />
+              <span>
+                {isChallengeItem && hasActiveWorkflow
+                  ? "Continue Challenge"
+                  : isUnavailable
+                    ? "Challenge Complete"
+                    : item.label}
+                {isUnavailable && (
+                  <span className="block text-[11px] font-normal">
+                    Come back tomorrow
+                  </span>
+                )}
+              </span>
+            </>
+          );
+
+          if (isUnavailable) {
+            return (
+              <div
+                key={item.href}
+                aria-disabled="true"
+                title="You've already completed your challenge for today. Come back tomorrow."
+                className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground/40"
+              >
+                {itemContent}
+              </div>
+            );
+          }
+
           return (
             <Link
               key={item.href}
@@ -71,16 +136,7 @@ export function Sidebar() {
                   : "text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-white"
               }`}
             >
-              <Icon
-                size={18}
-                className={isActive ? "text-primary" : "text-primary-foreground/80"}
-              />
-              <span>
-                {item.href === "/protected/start-challenge" &&
-                hasActiveWorkflow
-                  ? "Continue Challenge"
-                  : item.label}
-              </span>
+              {itemContent}
             </Link>
           );
         })}

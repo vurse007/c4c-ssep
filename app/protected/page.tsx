@@ -20,6 +20,7 @@ type RawResult = {
   challenge: string;
   score: number;
   played_at: string;
+  participation_day: string;
 };
 
 const REQUIRED_TRIAL_DAYS = 7;
@@ -30,33 +31,46 @@ function buildChartData(results: RawResult[]): ChartPoint[] {
   const sorted = [...results].sort((a, b) =>
     a.played_at.localeCompare(b.played_at),
   );
+  const days = getDistinctParticipationDays(sorted);
+  const points = new Map(
+    days.map((date, index) => [date, { day: index + 1 } as ChartPoint]),
+  );
 
-  const byChallenge: Record<string, number[]> = {};
-  for (const r of sorted) {
-    byChallenge[r.challenge] ??= [];
-    byChallenge[r.challenge].push(r.score);
+  for (const result of sorted) {
+    const challenge = CHALLENGES.find(
+      (item) => item.key === result.challenge,
+    );
+    const point = points.get(result.participation_day);
+    if (challenge && point) point[challenge.key] = result.score;
   }
 
-  const maxAttempts = Math.max(
-    0,
-    ...Object.values(byChallenge).map((s) => s.length),
-  );
-
-  return Array.from({ length: maxAttempts }, (_, i) => {
-    const point: ChartPoint = { attempt: i + 1 };
-    for (const c of CHALLENGES) {
-      const score = byChallenge[c.key]?.[i];
-      if (score !== undefined) point[c.key] = score;
-    }
-    return point;
-  });
+  return [...points.values()];
 }
 
-function countDistinctDays(results: RawResult[]): number {
-  const days = new Set(
-    results.map((result) => result.played_at.slice(0, 10)),
-  );
-  return days.size;
+function getDistinctParticipationDays(results: RawResult[]): string[] {
+  return [
+    ...new Set(results.map((result) => result.participation_day)),
+  ].sort();
+}
+
+function hasConsecutiveDayStreak(days: string[], requiredDays: number): boolean {
+  if (requiredDays <= 0) return true;
+
+  let streak = 0;
+  let previousDay: number | null = null;
+
+  for (const day of days) {
+    const currentDay = Date.parse(`${day}T00:00:00Z`);
+    streak =
+      previousDay !== null && currentDay - previousDay === 86_400_000
+        ? streak + 1
+        : 1;
+
+    if (streak >= requiredDays) return true;
+    previousDay = currentDay;
+  }
+
+  return false;
 }
 
 // ── Sub-components (each does its own async data fetch) ──────────────────────
@@ -73,23 +87,32 @@ async function OverviewContent() {
   const { data: results } = await supabase
     .from("challenge_results")
     .select(
-      "id, challenge, score, played_at, official_challenge_workflows!inner(status)",
+      "id, challenge, score, played_at, official_challenge_workflows!inner(status, completion_local_date)",
     )
     .eq("user_id", userId)
     .eq("is_official", true)
     .eq("official_challenge_workflows.status", "completed")
     .order("played_at", { ascending: true });
 
-  const rows: RawResult[] = (results ?? []).map((result) => ({
-    id: result.id,
-    challenge: result.challenge,
-    score: result.score,
-    played_at: result.played_at,
-  }));
+  const rows: RawResult[] = (results ?? []).map((result) => {
+    const relation = result.official_challenge_workflows;
+    const completedWorkflow = Array.isArray(relation) ? relation[0] : relation;
+
+    return {
+      id: result.id,
+      challenge: result.challenge,
+      score: result.score,
+      played_at: result.played_at,
+      participation_day:
+        completedWorkflow?.completion_local_date ??
+        result.played_at.slice(0, 10),
+    };
+  });
 
   const totalAttempts = rows.length;
   const challengesTried = new Set(rows.map((r) => r.challenge)).size;
-  const distinctDays = countDistinctDays(rows);
+  const participationDays = getDistinctParticipationDays(rows);
+  const distinctDays = participationDays.length;
   const averageScoreAll =
     rows.length > 0
       ? Math.round(rows.reduce((s, r) => s + r.score, 0) / rows.length)
@@ -123,7 +146,10 @@ async function OverviewContent() {
   ];
 
   const chartData = buildChartData(rows);
-  const trialComplete = distinctDays >= REQUIRED_TRIAL_DAYS;
+  const trialComplete = hasConsecutiveDayStreak(
+    participationDays,
+    REQUIRED_TRIAL_DAYS,
+  );
 
   return (
     <>
@@ -173,8 +199,8 @@ async function OverviewContent() {
         <CardHeader>
           <CardTitle className="text-lg">Performance Over Time</CardTitle>
           <CardDescription>
-            Score (0–100) per challenge across every official attempt.
-            Practice puzzles are not included.
+            Score (0–100) per challenge by participation day. Practice puzzles
+            are not included.
           </CardDescription>
         </CardHeader>
         <CardContent>

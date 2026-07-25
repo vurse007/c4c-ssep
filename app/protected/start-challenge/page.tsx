@@ -31,9 +31,11 @@ import {
   type PreSurveyData,
 } from "@/lib/challenge-workflow";
 import type { ChallengeKey } from "@/lib/challenges";
+import { getBrowserTimeZone } from "@/lib/local-day";
 
 type Stage =
   | "loading"
+  | "completed-today"
   | "survey"
   | "selection"
   | PlayableChallenge
@@ -88,19 +90,38 @@ export default function StartChallengePage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    const timeZone = getBrowserTimeZone();
+    const params = new URLSearchParams({ timeZone });
+    const now = new Date();
+    const nextMidnight = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+    );
+    const midnightTimer = setTimeout(
+      () => window.location.reload(),
+      nextMidnight.getTime() - now.getTime() + 100,
+    );
 
-    fetch("/api/challenge-workflow", { signal: controller.signal })
+    fetch(`/api/challenge-workflow?${params}`, { signal: controller.signal })
       .then(async (response) => {
         const body = await response.json();
         if (!response.ok) {
           throw new Error(body.error ?? "Unable to load challenge");
         }
-        return body.workflow as ChallengeWorkflow | null;
+        return body as {
+          workflow: ChallengeWorkflow | null;
+          completedToday: boolean;
+        };
       })
-      .then((activeWorkflow) => {
+      .then(({ workflow: activeWorkflow, completedToday }) => {
         setWorkflow(activeWorkflow);
         setStage(
-          activeWorkflow ? stageFromWorkflow(activeWorkflow) : "survey",
+          activeWorkflow
+            ? stageFromWorkflow(activeWorkflow)
+            : completedToday
+              ? "completed-today"
+              : "survey",
         );
       })
       .catch((error) => {
@@ -113,18 +134,29 @@ export default function StartChallengePage() {
         setStage("survey");
       });
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      clearTimeout(midnightTimer);
+    };
   }, []);
 
   const submitPreSurvey = useCallback(async (data: PreSurveyData) => {
     const response = await fetch("/api/challenge-workflow", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        time_zone: getBrowserTimeZone(),
+      }),
     });
     const body = await response.json();
 
     if (!response.ok) {
+      if (response.status === 409 && body.completedToday) {
+        setStage("completed-today");
+        notifyWorkflowChanged();
+        return;
+      }
       if (response.status === 409 && body.workflow) {
         const activeWorkflow = body.workflow as ChallengeWorkflow;
         setWorkflow(activeWorkflow);
@@ -225,6 +257,7 @@ export default function StartChallengePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "complete_post_survey",
+        time_zone: getBrowserTimeZone(),
           ...data,
         }),
       });
@@ -247,6 +280,24 @@ export default function StartChallengePage() {
         <div className="h-8 w-64 bg-muted" />
         <div className="h-4 w-96 max-w-full bg-muted" />
         <div className="h-64 bg-muted" />
+      </div>
+    );
+  }
+
+  if (stage === "completed-today") {
+    return (
+      <div className="max-w-2xl border border-border/60 bg-white p-8">
+        <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold mb-2">
+          Today&apos;s challenge complete
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Come back tomorrow
+        </h1>
+        <p className="text-muted-foreground mt-3">
+          You&apos;ve already completed your challenge for today. Your next
+          official challenge will become available at midnight in your local
+          time zone.
+        </p>
       </div>
     );
   }

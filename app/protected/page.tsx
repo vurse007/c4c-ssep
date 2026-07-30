@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TimeGreeting } from "@/components/time-greeting";
 import { PerformanceChart } from "@/components/performance-chart";
+import { CurrentStreakCard } from "@/components/current-streak-card";
 import { CHALLENGES, type ChartPoint } from "@/lib/challenges";
 import {
   Card,
@@ -10,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BarChart2, CalendarDays, CheckCircle2, Flame } from "lucide-react";
+import { BarChart2, CheckCircle2, Flame } from "lucide-react";
 import { Suspense } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -53,7 +54,8 @@ function getDistinctParticipationDays(results: RawResult[]): string[] {
   ].sort();
 }
 
-function hasConsecutiveDayStreak(days: string[], requiredDays: number): boolean {
+/** True if the user ever completed requiredDays calendar days in a row. */
+function hasCompletedTrial(days: string[], requiredDays: number): boolean {
   if (requiredDays <= 0) return true;
 
   let streak = 0;
@@ -71,6 +73,33 @@ function hasConsecutiveDayStreak(days: string[], requiredDays: number): boolean 
   }
 
   return false;
+}
+
+function StatCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+}: {
+  title: string;
+  value: string;
+  description: string;
+  icon: typeof Flame;
+}) {
+  return (
+    <Card className="border-border/50 shadow-none">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <Icon size={16} className="text-primary" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-foreground">{value}</div>
+        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+      </CardContent>
+    </Card>
+  );
 }
 
 // ── Sub-components (each does its own async data fetch) ──────────────────────
@@ -112,7 +141,6 @@ async function OverviewContent() {
   const totalAttempts = rows.length;
   const challengesTried = new Set(rows.map((r) => r.challenge)).size;
   const participationDays = getDistinctParticipationDays(rows);
-  const distinctDays = participationDays.length;
   const averageScoreAll =
     rows.length > 0
       ? Math.round(rows.reduce((s, r) => s + r.score, 0) / rows.length)
@@ -132,12 +160,6 @@ async function OverviewContent() {
       icon: CheckCircle2,
     },
     {
-      title: "Days Participated",
-      value: distinctDays > 0 ? String(distinctDays) : "—",
-      description: "Distinct days with a completed official challenge",
-      icon: CalendarDays,
-    },
-    {
       title: "Average Score",
       value: averageScoreAll !== null ? `${averageScoreAll}` : "—",
       description: "Mean score across all challenges (0–100)",
@@ -146,7 +168,7 @@ async function OverviewContent() {
   ];
 
   const chartData = buildChartData(rows);
-  const trialComplete = hasConsecutiveDayStreak(
+  const trialComplete = hasCompletedTrial(
     participationDays,
     REQUIRED_TRIAL_DAYS,
   );
@@ -172,27 +194,13 @@ async function OverviewContent() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.title} className="border-border/50 shadow-none">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
-                <Icon size={16} className="text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">
-                  {stat.value}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stat.description}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        <StatCard {...statCards[0]} />
+        <StatCard {...statCards[1]} />
+        <CurrentStreakCard
+          days={participationDays}
+          requiredDays={REQUIRED_TRIAL_DAYS}
+        />
+        <StatCard {...statCards[2]} />
       </div>
 
       <Card className="border-border/50 shadow-none">

@@ -36,6 +36,55 @@ export function shiftDateString(date: string, days: number): string {
   return shifted.toISOString().slice(0, 10);
 }
 
+/** Prefer stored local completion date; fall back carefully for pre-migration rows. */
+export function getWorkflowParticipationDay(workflow: {
+  completion_local_date?: string | null;
+  completion_time_zone?: string | null;
+  completed_at?: string | null;
+}): string | null {
+  if (
+    typeof workflow.completion_local_date === "string" &&
+    workflow.completion_local_date.length >= 10
+  ) {
+    return workflow.completion_local_date.slice(0, 10);
+  }
+
+  if (!workflow.completed_at) return null;
+
+  const completedAt = new Date(workflow.completed_at);
+  if (Number.isNaN(completedAt.getTime())) return null;
+
+  const timeZone = normalizeTimeZone(workflow.completion_time_zone);
+  if (timeZone) return getDateInTimeZone(completedAt, timeZone);
+
+  // Last resort: UTC calendar day (can diverge from the user's local day).
+  return completedAt.toISOString().slice(0, 10);
+}
+
+/** True if the user ever completed requiredDays calendar days in a row. */
+export function hasCompletedTrial(
+  days: string[],
+  requiredDays: number,
+): boolean {
+  if (requiredDays <= 0) return true;
+
+  let streak = 0;
+  let previousDay: number | null = null;
+
+  for (const day of days) {
+    const currentDay = Date.parse(`${day}T00:00:00Z`);
+    streak =
+      previousDay !== null && currentDay - previousDay === 86_400_000
+        ? streak + 1
+        : 1;
+
+    if (streak >= requiredDays) return true;
+    previousDay = currentDay;
+  }
+
+  return false;
+}
+
 /** Consecutive days ending on the latest entry, or 0 if that day is neither today nor yesterday. */
 export function getCurrentStreak(days: string[], timeZone: string): number {
   if (days.length === 0) return 0;

@@ -5,6 +5,10 @@ import { PerformanceChart } from "@/components/performance-chart";
 import { CurrentStreakCard } from "@/components/current-streak-card";
 import { CHALLENGES, type ChartPoint } from "@/lib/challenges";
 import {
+  getWorkflowParticipationDay,
+  hasCompletedTrial,
+} from "@/lib/local-day";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -32,7 +36,9 @@ function buildChartData(results: RawResult[]): ChartPoint[] {
   const sorted = [...results].sort((a, b) =>
     a.played_at.localeCompare(b.played_at),
   );
-  const days = getDistinctParticipationDays(sorted);
+  const days = [
+    ...new Set(sorted.map((result) => result.participation_day)),
+  ].sort();
   const points = new Map(
     days.map((date, index) => [date, { day: index + 1 } as ChartPoint]),
   );
@@ -48,31 +54,12 @@ function buildChartData(results: RawResult[]): ChartPoint[] {
   return [...points.values()];
 }
 
-function getDistinctParticipationDays(results: RawResult[]): string[] {
+function getDistinctDays(days: Array<string | null | undefined>): string[] {
   return [
-    ...new Set(results.map((result) => result.participation_day)),
+    ...new Set(
+      days.filter((day): day is string => typeof day === "string" && day.length >= 10),
+    ),
   ].sort();
-}
-
-/** True if the user ever completed requiredDays calendar days in a row. */
-function hasCompletedTrial(days: string[], requiredDays: number): boolean {
-  if (requiredDays <= 0) return true;
-
-  let streak = 0;
-  let previousDay: number | null = null;
-
-  for (const day of days) {
-    const currentDay = Date.parse(`${day}T00:00:00Z`);
-    streak =
-      previousDay !== null && currentDay - previousDay === 86_400_000
-        ? streak + 1
-        : 1;
-
-    if (streak >= requiredDays) return true;
-    previousDay = currentDay;
-  }
-
-  return false;
 }
 
 function StatCard({
@@ -113,15 +100,36 @@ async function OverviewContent() {
 
   const userId = claimsData.claims.sub;
 
-  const { data: results } = await supabase
+  // Trial/streak source of truth: completed workflows (matches study SQL).
+  const { data: completedWorkflows, error: workflowError } = await supabase
+    .from("official_challenge_workflows")
+    .select("completion_local_date, completion_time_zone, completed_at")
+    .eq("user_id", userId)
+    .eq("status", "completed");
+
+  if (workflowError) {
+    console.error("[overview] completed workflows query failed:", workflowError);
+  }
+
+  const participationDays = getDistinctDays(
+    (completedWorkflows ?? []).map((workflow) =>
+      getWorkflowParticipationDay(workflow),
+    ),
+  );
+
+  const { data: results, error: resultsError } = await supabase
     .from("challenge_results")
     .select(
-      "id, challenge, score, played_at, official_challenge_workflows!inner(status, completion_local_date)",
+      "id, challenge, score, played_at, official_challenge_workflows!inner(status, completion_local_date, completion_time_zone, completed_at)",
     )
     .eq("user_id", userId)
     .eq("is_official", true)
     .eq("official_challenge_workflows.status", "completed")
     .order("played_at", { ascending: true });
+
+  if (resultsError) {
+    console.error("[overview] challenge results query failed:", resultsError);
+  }
 
   const rows: RawResult[] = (results ?? []).map((result) => {
     const relation = result.official_challenge_workflows;
@@ -133,14 +141,13 @@ async function OverviewContent() {
       score: result.score,
       played_at: result.played_at,
       participation_day:
-        completedWorkflow?.completion_local_date ??
+        getWorkflowParticipationDay(completedWorkflow ?? {}) ??
         result.played_at.slice(0, 10),
     };
   });
 
   const totalAttempts = rows.length;
   const challengesTried = new Set(rows.map((r) => r.challenge)).size;
-  const participationDays = getDistinctParticipationDays(rows);
   const averageScoreAll =
     rows.length > 0
       ? Math.round(rows.reduce((s, r) => s + r.score, 0) / rows.length)

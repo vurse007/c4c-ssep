@@ -9,23 +9,23 @@ import {
   type BodyFeeling,
   type DayPace,
   type FocusEffort,
-  type PreSurveyData,
+  type PreSurveyAnswers,
 } from "@/lib/challenge-workflow";
-import {
-  STRESS_TECHNIQUES,
-  type StressTechniqueKey,
-} from "@/lib/stress-techniques";
 
 type Props = {
-  onSubmit: (data: PreSurveyData) => Promise<void>;
+  strategyLabel: string;
+  onSubmit: (data: PreSurveyAnswers) => Promise<void>;
+  onChangeStrategy?: () => void;
 };
 
 const choiceClass =
   "text-left border px-4 py-3 text-sm transition-colors";
 
-export function PreChallengeSurvey({ onSubmit }: Props) {
-  const [technique, setTechnique] =
-    useState<StressTechniqueKey | null>(null);
+export function PreChallengeSurvey({
+  strategyLabel,
+  onSubmit,
+  onChangeStrategy,
+}: Props) {
   const [stressLevel, setStressLevel] = useState(50);
   const [currentBpm, setCurrentBpm] = useState("");
   const [dayPace, setDayPace] = useState<DayPace | null>(null);
@@ -62,7 +62,6 @@ export function PreChallengeSurvey({ onSubmit }: Props) {
     bpmValue <= 220;
 
   const canSubmit =
-    technique !== null &&
     bpmValid &&
     dayPace !== null &&
     focusEffort !== null &&
@@ -70,12 +69,11 @@ export function PreChallengeSurvey({ onSubmit }: Props) {
     (!bodyFeelings.includes("other") || bodyOther.trim().length > 0);
 
   const handleSubmit = async () => {
-    if (!canSubmit || !technique || !dayPace || !focusEffort) return;
+    if (!canSubmit || !dayPace || !focusEffort) return;
     setSaving(true);
     setError(null);
     try {
       await onSubmit({
-        stress_management_technique: technique,
         pre_stress_level: stressLevel,
         pre_current_bpm: bpmValue,
         pre_day_pace: dayPace,
@@ -103,49 +101,24 @@ export function PreChallengeSurvey({ onSubmit }: Props) {
           Pre-challenge survey
         </p>
         <h1 className="text-3xl font-bold tracking-tight">
-          Start Challenge
+          Pre-challenge check-in
         </h1>
         <p className="text-muted-foreground mt-2">
-          Complete each question before selecting your challenge.
+          You just completed {strategyLabel}. Answer these questions
+          before selecting your puzzle.
         </p>
+        {onChangeStrategy && (
+          <button
+            type="button"
+            onClick={onChangeStrategy}
+            className="mt-3 text-sm text-primary underline-offset-4 hover:underline"
+          >
+            Use a different strategy
+          </button>
+        )}
       </div>
 
       <div className="mt-16 space-y-32">
-      <section className="space-y-4">
-        <h2 className="font-serif text-xl">
-          What coping strategy did you use?
-        </h2>
-        <div className="grid gap-3">
-          {STRESS_TECHNIQUES.map((option) => {
-            const selected = technique === option.key;
-            return (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => setTechnique(option.key)}
-                className={`${choiceClass} px-6 py-5 ${
-                  selected
-                    ? "border-[#1B3468] bg-[#1B3468]/5"
-                    : "border-black/10 bg-white hover:border-black/25"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-serif text-[17px]">
-                      {option.label}
-                    </p>
-                    <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                      {option.description}
-                    </p>
-                  </div>
-                  {selected && <Check size={18} className="text-primary" />}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-4">
           <h2 className="font-serif text-xl">

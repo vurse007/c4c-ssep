@@ -51,4 +51,43 @@
   .btn-citadel {
     @apply inline-block bg-citadel-blue text-white text-[13px] font-medium tracking-[0.04em] px-5 py-2.5 cursor-pointer transition-colors hover:bg-[#243e7a];
   }
+
+  .emres-orb {
+    @apply absolute rounded-full;
+    will-change: transform;
+  }
+
+  .emres-orb-a {
+    width: 9rem;
+    height: 9rem;
+    background-color: rgba(92, 74, 107, 0.22);
+    animation: emres-orb-a 7.5s ease-in-out infinite;
+  }
+
+  .emres-orb-b {
+    width: 8rem;
+    height: 8rem;
+    background-color: rgba(27, 52, 104, 0.2);
+    animation: emres-orb-b 6.2s ease-in-out infinite;
+  }
+}
+
+@keyframes emres-orb-a {
+  0%,
+  100% {
+    transform: translateX(-18px) scale(0.86);
+  }
+  50% {
+    transform: translateX(-18px) scale(1.08);
+  }
+}
+
+@keyframes emres-orb-b {
+  0%,
+  100% {
+    transform: translateX(22px) scale(1.04);
+  }
+  50% {
+    transform: translateX(22px) scale(0.84);
+  }
 }

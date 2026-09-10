@@ -1,16 +1,51 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { SlideInLeft } from "./slide-in-left";
 
+const HERO_IMAGES = [
+  "/ssep-hero/1.JPG",
+  "/ssep-hero/2.JPG",
+  "/ssep-hero/3.JPG",
+  "/ssep-hero/4.JPG",
+  "/ssep-hero/5.JPG",
+];
+
+const SLIDE_MS = 5500;
+
 export function HeroSection() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (media.matches) return;
+
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % HERO_IMAGES.length);
+    }, SLIDE_MS);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <section className="relative w-full h-[calc(92vh-100px)] flex justify-end bg-white overflow-visible">
       <div className="relative w-full md:w-[95%] h-full bg-[#0C1829] overflow-hidden">
-        <img
-          src="/hero-placeholder.svg"
-          alt="Hero background"
-          className="absolute inset-0 w-full h-full object-cover z-0"
+        {HERO_IMAGES.map((src, imageIndex) => (
+          <motion.img
+            key={src}
+            src={src}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover z-0"
+            initial={false}
+            animate={{ opacity: imageIndex === index ? 1 : 0 }}
+            transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1] }}
+          />
+        ))}
+        <div
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{ backgroundColor: "rgba(12, 24, 41, 0.72)" }}
         />
 
         {/* Title */}
@@ -27,7 +62,7 @@ export function HeroSection() {
           initial={{ clipPath: "inset(0 100% 0 0)" }}
           animate={{ clipPath: "inset(0 0% 0 0)" }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
-          className="absolute bottom-0 left-0 w-[95%] bg-[#1B3468]/50 z-30"
+          className="absolute bottom-0 left-0 w-[95%] bg-[#1B3468]/80 z-30"
         >
           <motion.div
             initial={{ opacity: 0 }}

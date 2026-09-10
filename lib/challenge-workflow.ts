@@ -74,14 +74,17 @@ export type WorkflowCheckpoint =
   | "post_survey"
   | "completed";
 
-export type PreSurveyData = {
-  stress_management_technique: StressTechniqueKey;
+export type PreSurveyAnswers = {
   pre_stress_level: number;
   pre_current_bpm: number;
   pre_day_pace: DayPace;
   pre_focus_effort: FocusEffort;
   pre_body_feelings: BodyFeeling[];
   pre_body_other: string | null;
+};
+
+export type PreSurveyData = PreSurveyAnswers & {
+  stress_management_technique: StressTechniqueKey;
 };
 
 export type PostSurveyData = {

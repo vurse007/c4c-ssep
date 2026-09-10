@@ -11,6 +11,10 @@ import {
   isOption,
   isOptionArray,
 } from "@/lib/challenge-workflow";
+import {
+  isCopingExerciseResult,
+  normalizeCopingExercise,
+} from "@/lib/coping-exercises";
 import { isStressTechnique } from "@/lib/stress-techniques";
 import {
   getDateInTimeZone,
@@ -151,7 +155,12 @@ export async function POST(req: NextRequest) {
     pre_focus_effort,
     pre_body_feelings,
     pre_body_other,
+    coping_exercise,
   } = body;
+
+  const exercise = isCopingExerciseResult(coping_exercise)
+    ? normalizeCopingExercise(coping_exercise)
+    : null;
 
   const hasOther =
     Array.isArray(pre_body_feelings) &&
@@ -171,10 +180,12 @@ export async function POST(req: NextRequest) {
     !isOptionArray(pre_body_feelings, BODY_FEELING_OPTIONS) ||
     (hasPerfectlyNormal && pre_body_feelings.length !== 1) ||
     (hasOther && normalizedOther.length === 0) ||
-    (!hasOther && normalizedOther.length > 0)
+    (!hasOther && normalizedOther.length > 0) ||
+    !exercise ||
+    exercise.technique !== stress_management_technique
   ) {
     return NextResponse.json(
-      { error: "Complete every pre-challenge survey question" },
+      { error: "Complete the coping exercise and every survey question" },
       { status: 400 },
     );
   }
@@ -196,6 +207,30 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const { error: exerciseError } = await supabase
+    .from("coping_exercise_results")
+    .insert({
+      user_id: user.id,
+      workflow_id: data.id,
+      technique: exercise.technique,
+      duration_seconds: exercise.duration_seconds,
+      feeling: exercise.feeling,
+      feeling_note: exercise.feeling_note,
+      details: exercise.details,
+    });
+
+  if (exerciseError) {
+    await supabase
+      .from("official_challenge_workflows")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", user.id);
+    return NextResponse.json(
+      { error: exerciseError.message },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ workflow: data }, { status: 201 });

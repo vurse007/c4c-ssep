@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChallengeGrid } from "@/components/challenge-grid";
+import { CopingExercise } from "@/components/coping-exercises";
+import { CopingStrategySelect } from "@/components/coping-strategy-select";
 import { PostChallengeSurvey } from "@/components/post-challenge-survey";
 import { PreChallengeSurvey } from "@/components/pre-challenge-survey";
 import {
@@ -28,14 +30,24 @@ import {
   type ChallengeWorkflow,
   type PlayableChallenge,
   type PostSurveyData,
-  type PreSurveyData,
+  type PreSurveyAnswers,
 } from "@/lib/challenge-workflow";
 import type { ChallengeKey } from "@/lib/challenges";
+import {
+  isCopingExerciseResult,
+  type CopingExerciseResult,
+} from "@/lib/coping-exercises";
 import { getBrowserTimeZone } from "@/lib/local-day";
+import {
+  STRESS_TECHNIQUES,
+  type StressTechniqueKey,
+} from "@/lib/stress-techniques";
 
 type Stage =
   | "loading"
   | "completed-today"
+  | "strategy"
+  | "exercise"
   | "survey"
   | "selection"
   | PlayableChallenge
@@ -62,8 +74,29 @@ const CHALLENGE_TITLES: Record<PlayableChallenge, string> = {
   "structured-list-recall": "Structured List Recall",
 };
 
+const EXERCISE_STORAGE_KEY = "ssep:coping-exercise";
+
 function notifyWorkflowChanged() {
   window.dispatchEvent(new Event("ssep:challenge-workflow-changed"));
+}
+
+function readStoredExercise(): CopingExerciseResult | null {
+  try {
+    const raw = sessionStorage.getItem(EXERCISE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return isCopingExerciseResult(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeExercise(result: CopingExerciseResult) {
+  sessionStorage.setItem(EXERCISE_STORAGE_KEY, JSON.stringify(result));
+}
+
+function clearStoredExercise() {
+  sessionStorage.removeItem(EXERCISE_STORAGE_KEY);
 }
 
 function stageFromWorkflow(workflow: ChallengeWorkflow): Stage {
@@ -75,7 +108,7 @@ function stageFromWorkflow(workflow: ChallengeWorkflow): Stage {
   ) {
     return workflow.selected_challenge;
   }
-  return "survey";
+  return "selection";
 }
 
 export default function StartChallengePage() {
@@ -87,6 +120,11 @@ export default function StartChallengePage() {
   const [completedAttempt, setCompletedAttempt] =
     useState<OfficialAttempt | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [technique, setTechnique] = useState<StressTechniqueKey | null>(
+    null,
+  );
+  const [exerciseResult, setExerciseResult] =
+    useState<CopingExerciseResult | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -116,13 +154,22 @@ export default function StartChallengePage() {
       })
       .then(({ workflow: activeWorkflow, completedToday }) => {
         setWorkflow(activeWorkflow);
-        setStage(
-          activeWorkflow
-            ? stageFromWorkflow(activeWorkflow)
-            : completedToday
-              ? "completed-today"
-              : "survey",
-        );
+        if (activeWorkflow) {
+          setStage(stageFromWorkflow(activeWorkflow));
+          return;
+        }
+        if (completedToday) {
+          setStage("completed-today");
+          return;
+        }
+        const stored = readStoredExercise();
+        if (stored) {
+          setTechnique(stored.technique);
+          setExerciseResult(stored);
+          setStage("survey");
+          return;
+        }
+        setStage("strategy");
       })
       .catch((error) => {
         if (error instanceof Error && error.name === "AbortError") return;
@@ -131,7 +178,7 @@ export default function StartChallengePage() {
             ? error.message
             : "Unable to load challenge",
         );
-        setStage("survey");
+        setStage("strategy");
       });
 
     return () => {
@@ -140,12 +187,18 @@ export default function StartChallengePage() {
     };
   }, []);
 
-  const submitPreSurvey = useCallback(async (data: PreSurveyData) => {
+  const submitPreSurvey = useCallback(async (data: PreSurveyAnswers) => {
+    if (!technique || !exerciseResult) {
+      throw new Error("Complete the coping exercise first");
+    }
+
     const response = await fetch("/api/challenge-workflow", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...data,
+        stress_management_technique: technique,
+        coping_exercise: exerciseResult,
         time_zone: getBrowserTimeZone(),
       }),
     });
@@ -168,9 +221,10 @@ export default function StartChallengePage() {
     }
 
     setWorkflow(body.workflow);
+    clearStoredExercise();
     setStage("selection");
     notifyWorkflowChanged();
-  }, []);
+  }, [technique, exerciseResult]);
 
   const selectChallenge = async (challenge: ChallengeKey) => {
     setUnavailable(null);
@@ -302,7 +356,7 @@ export default function StartChallengePage() {
     );
   }
 
-  if (stage === "survey") {
+  if (stage === "strategy") {
     return (
       <div>
         {loadError && (
@@ -310,7 +364,72 @@ export default function StartChallengePage() {
             {loadError}
           </p>
         )}
-        <PreChallengeSurvey onSubmit={submitPreSurvey} />
+        <CopingStrategySelect
+          selected={technique}
+          onSelect={setTechnique}
+          onContinue={() => {
+            if (!technique) return;
+            setExerciseResult(null);
+            clearStoredExercise();
+            setStage("exercise");
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (stage === "exercise") {
+    if (!technique) {
+      return (
+        <CopingStrategySelect
+          selected={technique}
+          onSelect={setTechnique}
+          onContinue={() => {
+            if (!technique) return;
+            setExerciseResult(null);
+            clearStoredExercise();
+            setStage("exercise");
+          }}
+        />
+      );
+    }
+    return (
+      <CopingExercise
+        technique={technique}
+        onBack={() => {
+          setExerciseResult(null);
+          clearStoredExercise();
+          setStage("strategy");
+        }}
+        onComplete={(result) => {
+          setExerciseResult(result);
+          storeExercise(result);
+          setStage("survey");
+        }}
+      />
+    );
+  }
+
+  if (stage === "survey") {
+    const strategyLabel =
+      STRESS_TECHNIQUES.find((option) => option.key === technique)?.label ??
+      "your coping strategy";
+    return (
+      <div>
+        {loadError && (
+          <p className="mb-5 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {loadError}
+          </p>
+        )}
+        <PreChallengeSurvey
+          strategyLabel={strategyLabel}
+          onSubmit={submitPreSurvey}
+          onChangeStrategy={() => {
+            setExerciseResult(null);
+            clearStoredExercise();
+            setStage("strategy");
+          }}
+        />
       </div>
     );
   }

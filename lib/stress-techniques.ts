@@ -1,5 +1,11 @@
 export const STRESS_TECHNIQUES = [
   {
+    key: "emres",
+    label: "Self-EmRes",
+    description:
+      "Notice the emotion, close your eyes if you feel safe, and feel at least two physical sensations until they settle on their own — so the reaction can resolve instead of just being managed.",
+  },
+  {
     key: "54321_grounding",
     label: "5-4-3-2-1 Sense Grounding",
     description:

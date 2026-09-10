@@ -50,7 +50,7 @@ export default function Home() {
             <DrawLine delay={0} />
             <FadeIn delay={0.15} className="flex-1">
               <span className="block text-[#111111] text-[clamp(40px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
-                120<sup className="text-[0.5em] align-super">+</sup>
+                200<sup className="text-[0.5em] align-super">+</sup>
               </span>
               <p className="text-[#6B7280] text-[13px] leading-[1.5]">
                 Healthcare providers<br/>supported
@@ -59,7 +59,7 @@ export default function Home() {
             <DrawLine delay={0.35} />
             <FadeIn delay={0.5} className="flex-1">
               <span className="block text-[#111111] text-[clamp(40px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
-                <sup className="text-[0.5em] align-super">$</sup>3,000
+                <sup className="text-[0.5em] align-super">$</sup>9,000
               </span>
               <p className="text-[#6B7280] text-[13px] leading-[1.5]">
                 Raised in<br/>funding
@@ -68,7 +68,7 @@ export default function Home() {
             <DrawLine delay={0.7} />
             <FadeIn delay={0.85} className="flex-1">
               <span className="block text-[#111111] text-[clamp(40px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
-                200<sup className="text-[0.5em] align-super">+</sup>
+                300<sup className="text-[0.5em] align-super">+</sup>
               </span>
               <p className="text-[#6B7280] text-[13px] leading-[1.5]">
                 Volunteers<br/>engaged

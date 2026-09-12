@@ -18,14 +18,14 @@ export function Navbar() {
         </NavSlideUp>
       </div>
 
-      {/* Right: Get Started */}
+      {/* Right: Portal */}
       <div className="flex items-center justify-end">
         <NavSlideUp delay={0.25}>
           <Link
             href="/auth/login"
             className="inline-block bg-citadel-blue text-white text-[14px] font-medium tracking-[0.04em] px-8 py-4 cursor-pointer transition-colors hover:bg-[#243e7a]"
           >
-            Get Started
+            Participant Portal Login
           </Link>
         </NavSlideUp>
       </div>

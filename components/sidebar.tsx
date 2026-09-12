@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Play,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { getBrowserTimeZone } from "@/lib/local-day";
 
@@ -18,7 +19,13 @@ const navItems = [
   { label: "Settings", href: "/protected/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
+  const items = isAdmin
+    ? [
+        ...navItems,
+        { label: "Admin", href: "/protected/admin", icon: ShieldCheck },
+      ]
+    : navItems;
   const pathname = usePathname();
   const [hasActiveWorkflow, setHasActiveWorkflow] = useState(false);
   const [completedToday, setCompletedToday] = useState(false);
@@ -81,7 +88,7 @@ export function Sidebar() {
 
       {/* Nav items */}
       <nav className="flex-1 px-3 space-y-1">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/protected" && pathname.startsWith(`${item.href}/`));

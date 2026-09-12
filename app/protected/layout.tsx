@@ -1,5 +1,6 @@
 import { AuthButton } from "@/components/auth-button";
 import { Sidebar } from "@/components/sidebar";
+import { SidebarGate } from "@/components/sidebar-gate";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -41,7 +42,9 @@ export default function ProtectedLayout({
 
       {/* Body: Sidebar + Content */}
       <div className="flex flex-1">
-        <Sidebar />
+        <Suspense fallback={<Sidebar isAdmin={false} />}>
+          <SidebarGate />
+        </Suspense>
         <main className="flex-1 pl-16 pr-8 pt-14 pb-8 overflow-auto">
           {children}
         </main>

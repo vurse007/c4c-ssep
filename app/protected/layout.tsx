@@ -12,7 +12,7 @@ export default function ProtectedLayout({
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFA]">
       {/* Top navbar */}
-      <nav className="w-full border-b border-black/6 bg-white h-16 flex items-center px-6 shrink-0">
+      <nav className="w-full border-b border-black/6 bg-white h-16 flex items-center px-4 sm:px-6 shrink-0">
         <div className="flex items-center justify-between w-full">
           {/* Left: Wordmark */}
           <div className="flex items-center gap-3">
@@ -45,7 +45,7 @@ export default function ProtectedLayout({
         <Suspense fallback={<Sidebar isAdmin={false} />}>
           <SidebarGate />
         </Suspense>
-        <main className="flex-1 pl-16 pr-8 pt-14 pb-8 overflow-auto">
+        <main className="flex-1 min-w-0 px-4 pt-6 pb-24 md:pl-16 md:pr-8 md:pt-14 md:pb-8 overflow-auto">
           {children}
         </main>
       </div>

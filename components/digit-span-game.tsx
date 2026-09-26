@@ -267,7 +267,7 @@ export function DigitSpanGame({
 
   if (gameState === "ready") {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
           Digit Span
         </p>
@@ -295,14 +295,14 @@ export function DigitSpanGame({
 
   if (gameState === "complete" && finalResult) {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
           Task complete
         </p>
         <h2 className="mt-2 font-serif text-3xl">
           Score: {finalResult.score}
         </h2>
-        <div className="mt-6 grid grid-cols-3 gap-8 text-sm">
+        <div className="mt-6 grid grid-cols-3 gap-4 sm:gap-8 text-sm">
           <div>
             <p className="text-2xl font-medium">
               {finalResult.rounds_correct}/{finalResult.rounds_total}
@@ -336,8 +336,8 @@ export function DigitSpanGame({
 
   if (gameState === "presenting") {
     return (
-      <div className="relative min-h-[430px] border border-black/10 bg-white px-8 py-7 flex flex-col items-center justify-center">
-        <p className="absolute left-8 top-7 text-sm text-muted-foreground">
+      <div className="relative min-h-[430px] border border-black/10 bg-white px-4 py-6 sm:px-8 sm:py-7 flex flex-col items-center justify-center">
+        <p className="absolute left-4 right-4 top-6 sm:left-8 sm:right-8 sm:top-7 text-sm text-muted-foreground">
           Round {roundIndex + 1} of {ROUND_LENGTHS.length} ·{" "}
           {ROUND_LENGTHS[roundIndex]} digits ·{" "}
           <span className="capitalize">{direction}</span>
@@ -348,7 +348,7 @@ export function DigitSpanGame({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="font-sans text-7xl font-bold tracking-wide tabular-nums"
+            className="font-sans text-6xl sm:text-7xl font-bold tracking-wide tabular-nums"
           >
             {displayDigit}
           </motion.p>
@@ -358,7 +358,7 @@ export function DigitSpanGame({
   }
 
   return (
-    <div className="relative min-h-[430px] border border-black/10 bg-white px-8 py-7 flex flex-col">
+    <div className="relative min-h-[430px] border border-black/10 bg-white px-4 py-6 sm:px-8 sm:py-7 flex flex-col">
       <p className="text-sm text-muted-foreground">
         Round {roundIndex + 1} of {ROUND_LENGTHS.length} · Enter the digits{" "}
         {direction === "forward" ? "in order" : "in reverse order"}
@@ -385,7 +385,7 @@ export function DigitSpanGame({
                 handleDigitChange(index, event.target.value)
               }
               onKeyDown={(event) => handleDigitKeyDown(index, event)}
-              className="h-14 w-12 border-2 border-black/20 bg-white text-center text-2xl font-medium outline-none focus:border-[#1B3468]"
+              className="h-12 w-10 sm:h-14 sm:w-12 border-2 border-black/20 bg-white text-center text-2xl font-medium outline-none focus:border-[#1B3468]"
             />
           ))}
         </div>

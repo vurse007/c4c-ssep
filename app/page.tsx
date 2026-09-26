@@ -17,7 +17,7 @@ export default function Home() {
       <HeroSection />
 
       {/* 2. About SSEP */}
-      <section className="w-full bg-white px-10 md:px-20 pt-16 pb-24 mt-40">
+      <section className="w-full bg-white px-5 sm:px-10 md:px-20 pt-16 pb-24 mt-16 md:mt-40">
         <div className="max-w-[1440px] mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-10">
             <FadeIn>
@@ -43,13 +43,13 @@ export default function Home() {
       </section>
 
       {/* 2b. Stats Row */}
-      <section className="w-full bg-white px-10 md:px-20 pt-10 pb-60">
+      <section className="w-full bg-white px-5 sm:px-10 md:px-20 pt-10 pb-24 md:pb-60">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-10">
           <div />
           <div className="flex items-start">
             <DrawLine delay={0} />
-            <FadeIn delay={0.15} className="flex-1">
-              <span className="block text-[#111111] text-[clamp(40px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
+            <FadeIn delay={0.15} className="flex-1 min-w-0">
+              <span className="block text-[#111111] text-[clamp(28px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
                 200<sup className="text-[0.5em] align-super">+</sup>
               </span>
               <p className="text-[#6B7280] text-[13px] leading-[1.5]">
@@ -57,8 +57,8 @@ export default function Home() {
               </p>
             </FadeIn>
             <DrawLine delay={0.35} />
-            <FadeIn delay={0.5} className="flex-1">
-              <span className="block text-[#111111] text-[clamp(40px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
+            <FadeIn delay={0.5} className="flex-1 min-w-0">
+              <span className="block text-[#111111] text-[clamp(28px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
                 <sup className="text-[0.5em] align-super">$</sup>9,000
               </span>
               <p className="text-[#6B7280] text-[13px] leading-[1.5]">
@@ -66,8 +66,8 @@ export default function Home() {
               </p>
             </FadeIn>
             <DrawLine delay={0.7} />
-            <FadeIn delay={0.85} className="flex-1">
-              <span className="block text-[#111111] text-[clamp(40px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
+            <FadeIn delay={0.85} className="flex-1 min-w-0">
+              <span className="block text-[#111111] text-[clamp(28px,5vw,64px)] font-sans font-normal tracking-[-0.02em] leading-none mb-2">
                 300<sup className="text-[0.5em] align-super">+</sup>
               </span>
               <p className="text-[#6B7280] text-[13px] leading-[1.5]">
@@ -79,7 +79,7 @@ export default function Home() {
       </section>
 
       {/* 3. Program Credibility - Redesigned to match screenshot */}
-      <section className="w-full bg-[#0C1829] px-10 md:px-20 pt-52 pb-16">
+      <section className="w-full bg-[#0C1829] px-5 sm:px-10 md:px-20 pt-24 md:pt-52 pb-16">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start mb-16">
           <SlideInLeft>
             <h2 className="text-[clamp(36px,4.5vw,52px)] font-serif leading-[1.15] tracking-[-0.02em]">
@@ -95,23 +95,23 @@ export default function Home() {
         </div>
 
         {/* University Logos */}
-        <div className="max-w-[1440px] mx-auto pt-24 pb-[120px]">
-          <div className="flex flex-wrap items-center justify-center gap-24">
+        <div className="max-w-[1440px] mx-auto pt-12 pb-16 md:pt-24 md:pb-[120px]">
+          <div className="flex flex-wrap items-center justify-center gap-12 md:gap-24">
             <FadeIn delay={0} className="flex items-center justify-center">
-              <img src="/ucla.svg" alt="UCLA" className="h-[140px] w-auto opacity-100" />
+              <img src="/ucla.svg" alt="UCLA" className="h-[90px] md:h-[140px] w-auto opacity-100" />
             </FadeIn>
             <FadeIn delay={0.2} className="flex items-center justify-center">
-              <img src="/stanford.svg" alt="Stanford" className="h-[180px] w-auto opacity-100" />
+              <img src="/stanford.svg" alt="Stanford" className="h-[110px] md:h-[180px] w-auto opacity-100" />
             </FadeIn>
             <FadeIn delay={0.4} className="flex items-center justify-center">
-              <img src="/ucsf.png" alt="UCSF" className="h-[170px] w-auto opacity-100" />
+              <img src="/ucsf.png" alt="UCSF" className="h-[100px] md:h-[170px] w-auto opacity-100" />
             </FadeIn>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="w-full bg-[#07080D] px-10 md:px-20 pt-20 pb-12">
+      <footer className="w-full bg-[#07080D] px-5 sm:px-10 md:px-20 pt-20 pb-12">
         <div className="max-w-[1440px] mx-auto">
           {/* Logo Row */}
           <div className="flex items-center justify-between mb-12">

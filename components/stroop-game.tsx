@@ -225,7 +225,7 @@ export function StroopGame({
 
   if (gameState === "ready") {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <h2 className="font-serif text-2xl">Ready to begin?</h2>
         <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
           Select the ink color of each word, not the color named by the word.
@@ -244,14 +244,14 @@ export function StroopGame({
 
   if (gameState === "complete" && finalResult) {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
           Task complete
         </p>
         <h2 className="mt-2 font-serif text-3xl">
           Score: {finalResult.score}
         </h2>
-        <div className="mt-6 grid grid-cols-3 gap-8 text-sm">
+        <div className="mt-6 grid grid-cols-3 gap-4 sm:gap-8 text-sm">
           <div>
             <p className="text-2xl font-medium">
               {finalResult.correct_responses}
@@ -284,12 +284,12 @@ export function StroopGame({
   }
 
   return (
-    <div className="relative min-h-[430px] border border-black/10 bg-white px-8 py-7 flex flex-col">
-      <p className="text-sm text-muted-foreground">
+    <div className="relative min-h-[430px] border border-black/10 bg-white px-4 py-6 sm:px-8 sm:py-7 flex flex-col">
+      <p className="pr-28 sm:pr-36 text-sm text-muted-foreground">
         You may press R, G, B, or Y on your keyboard to input your answer.
       </p>
       <p
-        className={`absolute right-8 top-7 text-sm font-semibold ${
+        className={`absolute right-4 top-6 sm:right-8 sm:top-7 text-sm font-semibold ${
           secondsRemaining <= 5 ? "text-red-600" : "text-foreground"
         }`}
       >
@@ -302,14 +302,14 @@ export function StroopGame({
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="font-sans text-6xl font-bold uppercase tracking-wide"
+          className="font-sans text-5xl sm:text-6xl font-bold uppercase tracking-wide"
           style={{ color: INK_COLORS[stimulus.ink] }}
         >
           {stimulus.word}
         </motion.p>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {COLORS.map((color) => (
           <button
             key={color}

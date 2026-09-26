@@ -13,17 +13,17 @@ import {
 import { getBrowserTimeZone } from "@/lib/local-day";
 
 const navItems = [
-  { label: "Overview", href: "/protected", icon: LayoutDashboard },
-  { label: "Try Puzzles", href: "/protected/try-puzzles", icon: CalendarDays },
-  { label: "Start Challenge", href: "/protected/start-challenge", icon: Play },
-  { label: "Settings", href: "/protected/settings", icon: Settings },
+  { label: "Overview", shortLabel: "Overview", href: "/protected", icon: LayoutDashboard },
+  { label: "Try Puzzles", shortLabel: "Puzzles", href: "/protected/try-puzzles", icon: CalendarDays },
+  { label: "Start Challenge", shortLabel: "Challenge", href: "/protected/start-challenge", icon: Play },
+  { label: "Settings", shortLabel: "Settings", href: "/protected/settings", icon: Settings },
 ];
 
 export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const items = isAdmin
     ? [
         ...navItems,
-        { label: "Admin", href: "/protected/admin", icon: ShieldCheck },
+        { label: "Admin", shortLabel: "Admin", href: "/protected/admin", icon: ShieldCheck },
       ]
     : navItems;
   const pathname = usePathname();
@@ -78,7 +78,56 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   }, [refreshWorkflowStatus]);
 
   return (
-    <aside className="w-64 min-h-[calc(100vh-4rem)] bg-primary border-t border-r border-primary-foreground/15 flex flex-col">
+    <>
+    <nav
+      aria-label="Primary"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-primary border-t border-primary-foreground/15 flex"
+    >
+      {items.map((item) => {
+        const isActive =
+          pathname === item.href ||
+          (item.href !== "/protected" && pathname.startsWith(`${item.href}/`));
+        const Icon = item.icon;
+        const isChallengeItem = item.href === "/protected/start-challenge";
+        const isUnavailable =
+          isChallengeItem && completedToday && !hasActiveWorkflow;
+        const label =
+          isChallengeItem && hasActiveWorkflow
+            ? "Continue"
+            : isUnavailable
+              ? "Done today"
+              : item.shortLabel;
+        const className = `flex flex-1 min-w-0 flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium ${
+          isUnavailable
+            ? "cursor-not-allowed text-primary-foreground/40"
+            : isActive
+              ? "bg-primary-foreground text-primary"
+              : "text-primary-foreground/80"
+        }`;
+
+        if (isUnavailable) {
+          return (
+            <div
+              key={item.href}
+              aria-disabled="true"
+              title="You've already completed your challenge for today. Come back tomorrow."
+              className={className}
+            >
+              <Icon size={20} />
+              <span className="truncate max-w-full">{label}</span>
+            </div>
+          );
+        }
+
+        return (
+          <Link key={item.href} href={item.href} className={className}>
+            <Icon size={20} />
+            <span className="truncate max-w-full">{label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+    <aside className="hidden md:flex w-64 shrink-0 min-h-[calc(100vh-4rem)] bg-primary border-t border-r border-primary-foreground/15 flex-col">
       {/* Sidebar header */}
       <div className="p-6 pb-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary-foreground/60">
@@ -160,5 +209,6 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
         </p>
       </div>
     </aside>
+    </>
   );
 }

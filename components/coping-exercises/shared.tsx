@@ -147,7 +147,7 @@ export function FeelingCheckin({
         onChange={(event) => onNote(event.target.value.slice(0, 250))}
         placeholder="Anything you noticed? (optional)"
         maxLength={250}
-        className="w-full border border-black/20 bg-white px-4 py-3 text-sm outline-none focus:border-[#1B3468]"
+        className="w-full border border-black/20 bg-white px-4 py-3 text-base sm:text-sm outline-none focus:border-[#1B3468]"
       />
       <PrimaryButton onClick={onContinue}>{continueLabel}</PrimaryButton>
     </motion.div>
@@ -223,7 +223,7 @@ export function TextField({
       onChange={(event) => onChange(event.target.value.slice(0, maxLength))}
       placeholder={placeholder}
       maxLength={maxLength}
-      className="w-full border border-black/20 bg-white px-4 py-3 text-sm outline-none focus:border-[#1B3468]"
+      className="w-full border border-black/20 bg-white px-4 py-3 text-base sm:text-sm outline-none focus:border-[#1B3468]"
     />
   );
 }

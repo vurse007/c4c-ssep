@@ -230,7 +230,7 @@ export function SerialSubtractionGame({
 
   if (gameState === "ready") {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <p className="text-sm text-muted-foreground">
           Begin at
         </p>
@@ -256,14 +256,14 @@ export function SerialSubtractionGame({
 
   if (gameState === "complete" && finalResult) {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
           Task complete
         </p>
         <h2 className="mt-2 font-serif text-3xl">
           Score: {finalResult.score}
         </h2>
-        <div className="mt-6 grid grid-cols-3 gap-8 text-sm">
+        <div className="mt-6 grid grid-cols-3 gap-4 sm:gap-8 text-sm">
           <div>
             <p className="text-2xl font-medium">
               {finalResult.correct_responses}
@@ -296,12 +296,12 @@ export function SerialSubtractionGame({
   }
 
   return (
-    <div className="relative min-h-[430px] border border-black/10 bg-white px-8 py-7 flex flex-col">
-      <p className="text-sm text-muted-foreground">
+    <div className="relative min-h-[430px] border border-black/10 bg-white px-4 py-6 sm:px-8 sm:py-7 flex flex-col">
+      <p className="pr-28 sm:pr-36 text-sm text-muted-foreground">
         Subtract {task.decrement} each time and submit every answer.
       </p>
       <p
-        className={`absolute right-8 top-7 text-sm font-semibold ${
+        className={`absolute right-4 top-6 sm:right-8 sm:top-7 text-sm font-semibold ${
           secondsRemaining <= 10 ? "text-red-600" : "text-foreground"
         }`}
       >
@@ -336,7 +336,7 @@ export function SerialSubtractionGame({
           onChange={(event) =>
             setInput(event.target.value.replace(/\D/g, ""))
           }
-          className="w-64 border-2 border-black/20 bg-white px-4 py-4 text-center text-3xl font-medium outline-none focus:border-[#1B3468]"
+          className="w-full max-w-64 border-2 border-black/20 bg-white px-4 py-4 text-center text-3xl font-medium outline-none focus:border-[#1B3468]"
         />
         <button
           type="submit"

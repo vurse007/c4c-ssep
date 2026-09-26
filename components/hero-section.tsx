@@ -49,7 +49,7 @@ export function HeroSection() {
         />
 
         {/* Title */}
-        <div className="absolute top-[44.5%] -translate-y-1/2 left-10 md:left-20 z-20 max-w-4xl">
+        <div className="absolute top-[44.5%] -translate-y-1/2 left-5 right-5 sm:left-10 md:left-20 z-20 max-w-4xl">
           <SlideInLeft delay={0.3}>
             <h1 className="text-white font-serif font-bold text-[clamp(40px,6vw,80px)] leading-[1.05] tracking-[-0.02em]">
               Simulated Stress<br />Exposure Program
@@ -68,10 +68,10 @@ export function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.8 }}
-            className="px-10 md:px-16 py-8"
+            className="px-5 sm:px-10 md:px-16 py-5 sm:py-8"
           >
-            <p className="text-white text-[15px] md:text-[16px] leading-[1.65] font-normal">
-              SSEP is an interactive workshop that transforms stress into a learning experience. Students complete cognitive challenges under varying <br/> levels of pressure, learn research-backed coping strategies, and discover how small changes can improve focus and performance.
+            <p className="text-white text-[14px] sm:text-[15px] md:text-[16px] leading-[1.6] font-normal">
+              SSEP is an interactive workshop that transforms stress into a learning experience. Students complete cognitive challenges under varying <br className="hidden md:inline" /> levels of pressure, learn research-backed coping strategies, and discover how small changes can improve focus and performance.
             </p>
           </motion.div>
         </motion.div>

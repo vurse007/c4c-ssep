@@ -68,7 +68,7 @@ function computeScore(numGuesses: number, seconds: number, won: boolean): number
 }
 
 function tileClass(state: TileState, filled: boolean): string {
-  const base = "w-14 h-14 border-2 flex items-center justify-center text-[22px] font-bold uppercase select-none";
+  const base = "w-12 h-12 sm:w-14 sm:h-14 border-2 flex items-center justify-center text-[20px] sm:text-[22px] font-bold uppercase select-none";
   if (state === "correct") return `${base} bg-[#6aaa64] border-[#6aaa64] text-white`;
   if (state === "present") return `${base} bg-[#c9b458] border-[#c9b458] text-white`;
   if (state === "absent")  return `${base} bg-[#787c7e] border-[#787c7e] text-white`;
@@ -78,8 +78,11 @@ function tileClass(state: TileState, filled: boolean): string {
 
 function keyClass(key: string, letterStates: Record<string, TileState>): string {
   const state = letterStates[key];
-  const base = "flex items-center justify-center font-semibold text-[13px] uppercase cursor-pointer select-none transition-colors duration-150 active:scale-95 rounded-sm";
-  const size = key === "ENTER" || key === "⌫" ? "px-3 h-14 min-w-[56px]" : "w-10 h-14";
+  const base = "flex min-w-0 items-center justify-center font-semibold uppercase cursor-pointer select-none transition-colors duration-150 active:scale-95 rounded-sm";
+  const size =
+    key === "ENTER" || key === "⌫"
+      ? "flex-[1.5] max-w-[68px] px-1 h-14 text-[11px] sm:text-[13px]"
+      : "flex-1 max-w-10 h-14 text-[13px]";
   if (state === "correct") return `${base} ${size} bg-[#6aaa64] text-white`;
   if (state === "present") return `${base} ${size} bg-[#c9b458] text-white`;
   if (state === "absent")  return `${base} ${size} bg-[#787c7e] text-white`;
@@ -212,7 +215,7 @@ export function WordleGame({
 
   if (!started) {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
           Wordle
         </p>
@@ -299,9 +302,9 @@ export function WordleGame({
       </div>
 
       {/* Keyboard */}
-      <div className="flex flex-col items-center gap-1.5">
+      <div className="flex w-full max-w-[500px] flex-col items-center gap-1.5">
         {KEYBOARD_ROWS.map((row, r) => (
-          <div key={r} className="flex gap-1.5">
+          <div key={r} className="flex w-full justify-center gap-1 sm:gap-1.5">
             {row.map((key) => (
               <button key={key} onClick={() => handleKey(key)} className={keyClass(key, letterStates)}>
                 {key}

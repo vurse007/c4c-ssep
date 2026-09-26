@@ -383,7 +383,7 @@ export function StructuredListRecallGame({
 
   if (gameState === "ready") {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
           Structured List Recall
         </p>
@@ -409,14 +409,14 @@ export function StructuredListRecallGame({
 
   if (gameState === "complete" && finalResult) {
     return (
-      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-8 text-center">
+      <div className="min-h-[430px] border border-black/10 bg-white flex flex-col items-center justify-center px-5 sm:px-8 text-center">
         <p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
           Task complete
         </p>
         <h2 className="mt-2 font-serif text-3xl">
           Score: {finalResult.score}
         </h2>
-        <div className="mt-6 grid grid-cols-2 gap-8 text-sm">
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-8 text-sm">
           <div>
             <p className="text-2xl font-medium">
               {finalResult.items_correct}/{finalResult.items_total}
@@ -443,13 +443,13 @@ export function StructuredListRecallGame({
   if (gameState === "presenting") {
     const config = LEVELS[levelIndex];
     return (
-      <div className="relative min-h-[430px] border border-black/10 bg-white px-8 py-7 flex flex-col">
-        <p className="text-sm text-muted-foreground">
+      <div className="relative min-h-[430px] border border-black/10 bg-white px-4 py-6 sm:px-8 sm:py-7 flex flex-col">
+        <p className="pr-28 sm:pr-36 text-sm text-muted-foreground">
           Level {config.level} of {LEVELS.length} · Memorize these{" "}
           {sequence.length} words
         </p>
         <p
-          className={`absolute right-8 top-7 text-sm font-semibold ${
+          className={`absolute right-4 top-6 sm:right-8 sm:top-7 text-sm font-semibold ${
             secondsRemaining <= 5 ? "text-red-600" : "text-foreground"
           }`}
         >
@@ -472,7 +472,7 @@ export function StructuredListRecallGame({
   const config = LEVELS[levelIndex];
 
   return (
-    <div className="min-h-[430px] border border-black/10 bg-white px-8 py-7 flex flex-col">
+    <div className="min-h-[430px] border border-black/10 bg-white px-4 py-6 sm:px-8 sm:py-7 flex flex-col">
       <p className="text-sm text-muted-foreground">
         Level {config.level} of {LEVELS.length} · Place each word you remember
         into the correct category
@@ -513,7 +513,7 @@ export function StructuredListRecallGame({
                 onKeyDown={(event) => handleDraftKeyDown(category, event)}
                 onBlur={() => addChip(category)}
                 placeholder="Type a word, press Enter"
-                className="min-w-[160px] flex-1 bg-transparent py-1 text-sm outline-none"
+                className="min-w-[140px] flex-1 bg-transparent py-1 text-base sm:text-sm outline-none"
                 autoComplete="off"
               />
             </div>

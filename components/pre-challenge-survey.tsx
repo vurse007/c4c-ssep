@@ -155,7 +155,7 @@ export function PreChallengeSurvey({
             setCurrentBpm(event.target.value.replace(/\D/g, "").slice(0, 3))
           }
           placeholder="e.g. 72"
-          className="w-full max-w-xs border border-black/20 bg-white px-4 py-3 text-sm outline-none focus:border-[#1B3468]"
+          className="w-full max-w-xs border border-black/20 bg-white px-4 py-3 text-base sm:text-sm outline-none focus:border-[#1B3468]"
         />
       </section>
 
@@ -217,7 +217,7 @@ export function PreChallengeSurvey({
             onChange={(event) => setBodyOther(event.target.value)}
             placeholder="Please describe how your body feels"
             maxLength={250}
-            className="w-full border border-black/20 bg-white px-4 py-3 text-sm outline-none focus:border-[#1B3468]"
+            className="w-full border border-black/20 bg-white px-4 py-3 text-base sm:text-sm outline-none focus:border-[#1B3468]"
           />
         )}
       </section>

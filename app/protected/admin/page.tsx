@@ -235,6 +235,12 @@ async function AdminOverviewContent() {
           View trial progress →
         </Link>
         <Link
+          href="/protected/admin/users"
+          className="text-primary underline underline-offset-2"
+        >
+          Users by recent activity →
+        </Link>
+        <Link
           href="/protected/admin/participants"
           className="text-primary underline underline-offset-2"
         >

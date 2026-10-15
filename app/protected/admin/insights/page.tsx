@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { STRESS_TECHNIQUES } from "@/lib/stress-techniques";
 import { CohortTabs } from "@/components/cohort-tabs";
 import { cohortLabel, parseCohort, type CohortKey } from "@/lib/cohorts";
+import { parseTier, tierLabel, type TierKey } from "@/lib/tiers";
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -68,10 +69,17 @@ function PreliminaryBanner() {
   );
 }
 
-async function AdminInsightsContent({ cohort }: { cohort: CohortKey }) {
+async function AdminInsightsContent({
+  cohort,
+  tier,
+}: {
+  cohort: CohortKey;
+  tier: TierKey;
+}) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_technique_effectiveness", {
     p_cohort: cohort,
+    p_tier: tier,
   });
   const rows = (data as TechniqueEffectiveness[] | null) ?? [];
 
@@ -101,7 +109,11 @@ async function AdminInsightsContent({ cohort }: { cohort: CohortKey }) {
         </Link>
       </div>
 
-      <CohortTabs basePath="/protected/admin/insights" current={cohort} />
+      <CohortTabs
+        basePath="/protected/admin/insights"
+        current={cohort}
+        tier={tier}
+      />
 
       <PreliminaryBanner />
 
@@ -109,8 +121,8 @@ async function AdminInsightsContent({ cohort }: { cohort: CohortKey }) {
         <CardHeader>
           <CardTitle className="text-lg">At a Glance (All Techniques)</CardTitle>
           <CardDescription>
-            {cohortLabel(cohort)}: weighted across every completed official
-            run.{" "}
+            {cohortLabel(cohort)} · {tierLabel(tier)}: weighted across every
+            completed official run.{" "}
             {overallLimitedData && (
               <span className="font-medium text-amber-700">
                 Only {totalN} runs so far — likely too few to draw
@@ -236,7 +248,7 @@ async function AdminInsightsContent({ cohort }: { cohort: CohortKey }) {
 
       <div className="flex justify-end">
         <a
-          href={`/api/admin/insights-export?cohort=${cohort}`}
+          href={`/api/admin/insights-export?cohort=${cohort}&tier=${tier}`}
           className="text-sm font-medium text-primary underline underline-offset-2"
         >
           Export CSV
@@ -249,14 +261,17 @@ async function AdminInsightsContent({ cohort }: { cohort: CohortKey }) {
 export default async function AdminInsightsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cohort?: string }>;
+  searchParams: Promise<{ cohort?: string; tier?: string }>;
 }) {
-  const { cohort } = await searchParams;
+  const { cohort, tier } = await searchParams;
   return (
     <Suspense
       fallback={<div className="h-64 bg-muted animate-pulse rounded-lg" />}
     >
-      <AdminInsightsContent cohort={parseCohort(cohort)} />
+      <AdminInsightsContent
+        cohort={parseCohort(cohort)}
+        tier={parseTier(tier)}
+      />
     </Suspense>
   );
 }

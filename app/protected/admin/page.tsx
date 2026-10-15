@@ -11,6 +11,13 @@ import { CHALLENGES } from "@/lib/challenges";
 import { Users, CheckCircle2, BarChart2, TrendingUp } from "lucide-react";
 import { CohortTabs } from "@/components/cohort-tabs";
 import { parseCohort, rowCohort, type CohortKey } from "@/lib/cohorts";
+import {
+  inTierDataset,
+  parseTier,
+  rowTier,
+  trialRunWorkflowIds,
+  type TierKey,
+} from "@/lib/tiers";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -19,7 +26,13 @@ function average(values: number[]): number | null {
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
-async function AdminOverviewContent({ cohort }: { cohort: CohortKey }) {
+async function AdminOverviewContent({
+  cohort,
+  tier,
+}: {
+  cohort: CohortKey;
+  tier: TierKey;
+}) {
   const supabase = await createClient();
 
   const [
@@ -27,15 +40,20 @@ async function AdminOverviewContent({ cohort }: { cohort: CohortKey }) {
     { data: results },
     { data: progress },
     { data: cohorts },
+    { data: tiers },
   ] = await Promise.all([
     supabase
       .from("official_challenge_workflows")
       .select(
-        "user_id, deleted_account_cohort, status, stress_management_technique, pre_stress_level, post_stress_level",
+        "id, user_id, deleted_account_cohort, status, completion_local_date, completed_at, stress_management_technique, pre_stress_level, post_stress_level",
       ),
-    supabase.from("challenge_results").select("user_id, deleted_account_cohort, challenge, is_official"),
-    supabase.rpc("admin_participant_progress", { p_cohort: cohort }),
+    supabase.from("challenge_results").select("user_id, deleted_account_cohort, workflow_id, challenge, is_official"),
+    supabase.rpc("admin_participant_progress", {
+      p_cohort: cohort,
+      p_tier: tier,
+    }),
     supabase.rpc("admin_participant_cohorts"),
+    supabase.rpc("admin_participant_tiers"),
   ]);
 
   // Only rows in the selected cohort count; admins never match a cohort.
@@ -43,13 +61,27 @@ async function AdminOverviewContent({ cohort }: { cohort: CohortKey }) {
   const cohortRows =
     (cohorts as { user_id: string; cohort: string }[] | null) ?? [];
   const cohortByUser = new Map(cohortRows.map((c) => [c.user_id, c.cohort]));
-  const inCohort = cohortRows.filter((c) => c.cohort === cohort);
-  const cohortWorkflows = (workflows ?? []).filter(
-    (w) => rowCohort(w, cohortByUser) === cohort,
+  const tierRows = (tiers as { user_id: string; tier: string }[] | null) ?? [];
+  const tierByUser = new Map(tierRows.map((t) => [t.user_id, t.tier]));
+  // Standard also includes each returner's first 7 consecutive days.
+  const trialRunIds = trialRunWorkflowIds(
+    (workflows ?? []).filter((w) => w.status === "completed"),
   );
-  const cohortResults = (results ?? []).filter(
-    (r) => rowCohort(r, cohortByUser) === cohort,
+  const inGroup = (
+    row: { user_id?: unknown; deleted_account_cohort?: unknown },
+    workflowId: unknown,
+  ) =>
+    rowCohort(row, cohortByUser) === cohort &&
+    inTierDataset(
+      tier,
+      rowTier(row, tierByUser),
+      typeof workflowId === "string" && trialRunIds.has(workflowId),
+    );
+  const inCohort = cohortRows.filter(
+    (c) => c.cohort === cohort && (tierByUser.get(c.user_id) ?? "standard") === tier,
   );
+  const cohortWorkflows = (workflows ?? []).filter((w) => inGroup(w, w.id));
+  const cohortResults = (results ?? []).filter((r) => inGroup(r, r.workflow_id));
 
   const participantCount = inCohort.length;
   const progressRows =
@@ -98,11 +130,11 @@ async function AdminOverviewContent({ cohort }: { cohort: CohortKey }) {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Admin Overview</h1>
         <p className="text-muted-foreground mt-1">
-          Aggregate data for the selected cohort. Admin accounts are excluded.
+          Aggregate data for the selected cohort and streak group. Admin accounts are excluded.
         </p>
       </div>
 
-      <CohortTabs basePath="/protected/admin" current={cohort} />
+      <CohortTabs basePath="/protected/admin" current={cohort} tier={tier} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/50 shadow-none">
@@ -117,7 +149,7 @@ async function AdminOverviewContent({ cohort }: { cohort: CohortKey }) {
               {participantCount}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Registered accounts in this cohort
+              Registered accounts in this group
             </p>
           </CardContent>
         </Card>
@@ -240,6 +272,12 @@ async function AdminOverviewContent({ cohort }: { cohort: CohortKey }) {
 
       <div className="flex gap-4 text-sm">
         <Link
+          href={`/protected/admin/trends?cohort=${cohort}&tier=${tier}`}
+          className="text-primary underline underline-offset-2"
+        >
+          Day-by-day trends →
+        </Link>
+        <Link
           href="/protected/admin/insights"
           className="text-primary underline underline-offset-2"
         >
@@ -277,16 +315,19 @@ async function AdminOverviewContent({ cohort }: { cohort: CohortKey }) {
 export default async function AdminOverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cohort?: string }>;
+  searchParams: Promise<{ cohort?: string; tier?: string }>;
 }) {
-  const { cohort } = await searchParams;
+  const { cohort, tier } = await searchParams;
   return (
     <Suspense
       fallback={
         <div className="h-64 bg-muted animate-pulse rounded-lg" />
       }
     >
-      <AdminOverviewContent cohort={parseCohort(cohort)} />
+      <AdminOverviewContent
+        cohort={parseCohort(cohort)}
+        tier={parseTier(tier)}
+      />
     </Suspense>
   );
 }

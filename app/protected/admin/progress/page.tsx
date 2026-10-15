@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CohortTabs } from "@/components/cohort-tabs";
 import { cohortLabel, parseCohort, type CohortKey } from "@/lib/cohorts";
+import { parseTier, tierLabel, type TierKey } from "@/lib/tiers";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -26,10 +27,17 @@ type ParticipantProgress = {
   last_day: string | null;
 };
 
-async function AdminProgressContent({ cohort }: { cohort: CohortKey }) {
+async function AdminProgressContent({
+  cohort,
+  tier,
+}: {
+  cohort: CohortKey;
+  tier: TierKey;
+}) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_participant_progress", {
     p_cohort: cohort,
+    p_tier: tier,
   });
   const rows = (data as ParticipantProgress[] | null) ?? [];
 
@@ -61,7 +69,11 @@ async function AdminProgressContent({ cohort }: { cohort: CohortKey }) {
         </Link>
       </div>
 
-      <CohortTabs basePath="/protected/admin/progress" current={cohort} />
+      <CohortTabs
+        basePath="/protected/admin/progress"
+        current={cohort}
+        tier={tier}
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="border-border/50 shadow-none">
@@ -118,11 +130,11 @@ async function AdminProgressContent({ cohort }: { cohort: CohortKey }) {
             <CardDescription>
               {error
                 ? "Failed to load progress."
-                : `${rows.length} participants (${cohortLabel(cohort)}).`}
+                : `${rows.length} participants (${cohortLabel(cohort)} · ${tierLabel(tier)}).`}
             </CardDescription>
           </div>
           <a
-            href={`/api/admin/progress-export?cohort=${cohort}`}
+            href={`/api/admin/progress-export?cohort=${cohort}&tier=${tier}`}
             className="text-sm font-medium text-primary underline underline-offset-2"
           >
             Export CSV
@@ -185,14 +197,17 @@ async function AdminProgressContent({ cohort }: { cohort: CohortKey }) {
 export default async function AdminProgressPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cohort?: string }>;
+  searchParams: Promise<{ cohort?: string; tier?: string }>;
 }) {
-  const { cohort } = await searchParams;
+  const { cohort, tier } = await searchParams;
   return (
     <Suspense
       fallback={<div className="h-64 bg-muted animate-pulse rounded-lg" />}
     >
-      <AdminProgressContent cohort={parseCohort(cohort)} />
+      <AdminProgressContent
+        cohort={parseCohort(cohort)}
+        tier={parseTier(tier)}
+      />
     </Suspense>
   );
 }

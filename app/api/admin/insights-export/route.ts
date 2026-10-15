@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isCurrentUserAdmin } from "@/lib/supabase/is-admin";
 import { toCsv } from "@/lib/csv";
 import { parseCohort } from "@/lib/cohorts";
+import { parseTier } from "@/lib/tiers";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -19,8 +20,10 @@ export async function GET(request: NextRequest) {
   }
 
   const cohort = parseCohort(request.nextUrl.searchParams.get("cohort"));
+  const tier = parseTier(request.nextUrl.searchParams.get("tier"));
   const { data, error } = await supabase.rpc("admin_technique_effectiveness", {
     p_cohort: cohort,
+    p_tier: tier,
   });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -29,6 +32,7 @@ export async function GET(request: NextRequest) {
   const csv = toCsv(
     ((data ?? []) as Record<string, unknown>[]).map((row) => ({
       cohort,
+      tier,
       ...row,
     })),
   );
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="technique-effectiveness-${cohort}.csv"`,
+      "Content-Disposition": `attachment; filename="technique-effectiveness-${cohort}-${tier}.csv"`,
     },
   });
 }

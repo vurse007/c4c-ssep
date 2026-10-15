@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cohortLabel } from "@/lib/cohorts";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -18,11 +19,22 @@ type Participant = {
 async function AdminParticipantsContent() {
   const supabase = await createClient();
 
-  const [{ data: participants, error: participantsError }, { data: results }] =
+  const [
+    { data: participants, error: participantsError },
+    { data: results },
+    { data: cohorts },
+  ] =
     await Promise.all([
       supabase.rpc("admin_list_participants"),
       supabase.from("challenge_results").select("user_id, is_official"),
+      supabase.rpc("admin_participant_cohorts"),
     ]);
+
+  const cohortByUser = new Map(
+    ((cohorts as { user_id: string; cohort: string }[] | null) ?? []).map(
+      (c) => [c.user_id, c.cohort],
+    ),
+  );
 
   const countsByUser = new Map<string, { total: number; official: number }>();
   for (const row of results ?? []) {
@@ -68,6 +80,7 @@ async function AdminParticipantsContent() {
               <thead>
                 <tr className="text-left text-muted-foreground border-b border-border">
                   <th className="py-2 pr-4 font-medium">Email</th>
+                  <th className="py-2 pr-4 font-medium">Cohort</th>
                   <th className="py-2 pr-4 font-medium">Signed up</th>
                   <th className="py-2 pr-4 font-medium">Total attempts</th>
                   <th className="py-2 pr-4 font-medium">Official attempts</th>
@@ -82,6 +95,9 @@ async function AdminParticipantsContent() {
                   return (
                     <tr key={p.user_id} className="border-b border-border/50">
                       <td className="py-2 pr-4">{p.email ?? "—"}</td>
+                      <td className="py-2 pr-4">
+                        {cohortLabel(cohortByUser.get(p.user_id) ?? "unclassified")}
+                      </td>
                       <td className="py-2 pr-4">
                         {new Date(p.created_at).toLocaleDateString()}
                       </td>

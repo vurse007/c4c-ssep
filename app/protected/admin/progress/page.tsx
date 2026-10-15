@@ -7,6 +7,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CohortTabs } from "@/components/cohort-tabs";
+import { cohortLabel, parseCohort, type CohortKey } from "@/lib/cohorts";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -24,9 +26,11 @@ type ParticipantProgress = {
   last_day: string | null;
 };
 
-async function AdminProgressContent() {
+async function AdminProgressContent({ cohort }: { cohort: CohortKey }) {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_participant_progress");
+  const { data, error } = await supabase.rpc("admin_participant_progress", {
+    p_cohort: cohort,
+  });
   const rows = (data as ParticipantProgress[] | null) ?? [];
 
   const totalParticipants = rows.length;
@@ -56,6 +60,8 @@ async function AdminProgressContent() {
           ← Overview
         </Link>
       </div>
+
+      <CohortTabs basePath="/protected/admin/progress" current={cohort} />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="border-border/50 shadow-none">
@@ -112,11 +118,11 @@ async function AdminProgressContent() {
             <CardDescription>
               {error
                 ? "Failed to load progress."
-                : `${rows.length} participants.`}
+                : `${rows.length} participants (${cohortLabel(cohort)}).`}
             </CardDescription>
           </div>
           <a
-            href="/api/admin/progress-export"
+            href={`/api/admin/progress-export?cohort=${cohort}`}
             className="text-sm font-medium text-primary underline underline-offset-2"
           >
             Export CSV
@@ -176,12 +182,17 @@ async function AdminProgressContent() {
   );
 }
 
-export default function AdminProgressPage() {
+export default async function AdminProgressPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cohort?: string }>;
+}) {
+  const { cohort } = await searchParams;
   return (
     <Suspense
       fallback={<div className="h-64 bg-muted animate-pulse rounded-lg" />}
     >
-      <AdminProgressContent />
+      <AdminProgressContent cohort={parseCohort(cohort)} />
     </Suspense>
   );
 }

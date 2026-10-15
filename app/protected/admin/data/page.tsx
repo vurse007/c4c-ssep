@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ADMIN_TABLES, isAdminTableKey } from "@/lib/admin-tables";
+import { withCohort } from "@/lib/cohorts";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -29,10 +30,18 @@ async function AdminDataContent({
     : ADMIN_TABLES[0].key;
 
   const supabase = await createClient();
-  const { data: rows, error } = await supabase
-    .from(table)
-    .select("*")
-    .limit(ROW_LIMIT);
+  const [{ data: rawRows, error }, { data: cohorts }] = await Promise.all([
+    supabase.from(table).select("*").limit(ROW_LIMIT),
+    supabase.rpc("admin_participant_cohorts"),
+  ]);
+  const cohortByUser = new Map(
+    ((cohorts as { user_id: string; cohort: string }[] | null) ?? []).map(
+      (c) => [c.user_id, c.cohort],
+    ),
+  );
+  const rows = rawRows
+    ? withCohort(rawRows as Record<string, unknown>[], cohortByUser)
+    : rawRows;
 
   const columns = rows && rows.length > 0 ? Object.keys(rows[0]) : [];
 

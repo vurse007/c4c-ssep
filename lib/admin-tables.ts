@@ -7,6 +7,7 @@ export const ADMIN_TABLES = [
   { key: "serial_subtraction_results", label: "Serial Subtraction Details" },
   { key: "digit_span_results", label: "Digit Span Details" },
   { key: "structured_list_recall_results", label: "Structured List Recall Details" },
+  { key: "participant_profiles", label: "Participant Profiles (workshop attendance)" },
 ] as const;
 
 export type AdminTableKey = (typeof ADMIN_TABLES)[number]["key"];

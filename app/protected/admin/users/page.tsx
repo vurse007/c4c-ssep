@@ -6,6 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CohortTabs } from "@/components/cohort-tabs";
+import { cohortLabel, parseCohort, type CohortKey } from "@/lib/cohorts";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -17,11 +19,11 @@ type ParticipantProgress = {
   days_completed: number;
 };
 
-async function AdminUsersContent() {
+async function AdminUsersContent({ cohort }: { cohort: CohortKey }) {
   const supabase = await createClient();
 
   const [{ data: progress, error }, { data: workflows }] = await Promise.all([
-    supabase.rpc("admin_participant_progress"),
+    supabase.rpc("admin_participant_progress", { p_cohort: cohort }),
     supabase
       .from("official_challenge_workflows")
       .select("user_id, completed_at")
@@ -68,11 +70,13 @@ async function AdminUsersContent() {
         </Link>
       </div>
 
+      <CohortTabs basePath="/protected/admin/users" current={cohort} />
+
       <Card className="border-border/50 shadow-none">
         <CardHeader>
           <CardTitle className="text-lg">All Users</CardTitle>
           <CardDescription>
-            {error ? "Could not load users." : `${rows.length} users.`}
+            {error ? "Could not load users." : `${rows.length} users (${cohortLabel(cohort)}).`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -127,12 +131,17 @@ async function AdminUsersContent() {
   );
 }
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cohort?: string }>;
+}) {
+  const { cohort } = await searchParams;
   return (
     <Suspense
       fallback={<div className="h-64 bg-muted animate-pulse rounded-lg" />}
     >
-      <AdminUsersContent />
+      <AdminUsersContent cohort={parseCohort(cohort)} />
     </Suspense>
   );
 }

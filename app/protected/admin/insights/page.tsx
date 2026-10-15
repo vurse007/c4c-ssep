@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { STRESS_TECHNIQUES } from "@/lib/stress-techniques";
+import { CohortTabs } from "@/components/cohort-tabs";
+import { cohortLabel, parseCohort, type CohortKey } from "@/lib/cohorts";
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -66,9 +68,11 @@ function PreliminaryBanner() {
   );
 }
 
-async function AdminInsightsContent() {
+async function AdminInsightsContent({ cohort }: { cohort: CohortKey }) {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_technique_effectiveness");
+  const { data, error } = await supabase.rpc("admin_technique_effectiveness", {
+    p_cohort: cohort,
+  });
   const rows = (data as TechniqueEffectiveness[] | null) ?? [];
 
   const totalN = rows.reduce((sum, r) => sum + r.n, 0);
@@ -97,13 +101,16 @@ async function AdminInsightsContent() {
         </Link>
       </div>
 
+      <CohortTabs basePath="/protected/admin/insights" current={cohort} />
+
       <PreliminaryBanner />
 
       <Card className="border-border/50 shadow-none">
         <CardHeader>
           <CardTitle className="text-lg">At a Glance (All Techniques)</CardTitle>
           <CardDescription>
-            Weighted across every completed official run.{" "}
+            {cohortLabel(cohort)}: weighted across every completed official
+            run.{" "}
             {overallLimitedData && (
               <span className="font-medium text-amber-700">
                 Only {totalN} runs so far — likely too few to draw
@@ -229,7 +236,7 @@ async function AdminInsightsContent() {
 
       <div className="flex justify-end">
         <a
-          href="/api/admin/insights-export"
+          href={`/api/admin/insights-export?cohort=${cohort}`}
           className="text-sm font-medium text-primary underline underline-offset-2"
         >
           Export CSV
@@ -239,12 +246,17 @@ async function AdminInsightsContent() {
   );
 }
 
-export default function AdminInsightsPage() {
+export default async function AdminInsightsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cohort?: string }>;
+}) {
+  const { cohort } = await searchParams;
   return (
     <Suspense
       fallback={<div className="h-64 bg-muted animate-pulse rounded-lg" />}
     >
-      <AdminInsightsContent />
+      <AdminInsightsContent cohort={parseCohort(cohort)} />
     </Suspense>
   );
 }

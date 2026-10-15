@@ -25,6 +25,9 @@ export function SignUpForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const [attendedInPerson, setAttendedInPerson] = useState<"yes" | "no" | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -41,20 +44,28 @@ export function SignUpForm({
       return;
     }
 
+    if (attendedInPerson === null) {
+      setError("Please tell us whether you have attended an in-person workshop");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/protected`,
           data: {
             first_name: firstName,
             last_name: lastName,
             full_name: `${firstName} ${lastName}`.trim(),
+            attended_in_person_workshop: attendedInPerson === "yes",
           },
         },
       });
       if (error) throw error;
-      router.push("/protected");
+      router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -139,6 +150,34 @@ export function SignUpForm({
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
               </div>
+              <fieldset className="grid gap-2">
+                <legend className="text-sm font-medium leading-none mb-2">
+                  Have you attended an in-person workshop hosted by Caring for
+                  Caregivers before?
+                </legend>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="attended-in-person"
+                    value="yes"
+                    required
+                    checked={attendedInPerson === "yes"}
+                    onChange={() => setAttendedInPerson("yes")}
+                  />
+                  Yes
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="attended-in-person"
+                    value="no"
+                    required
+                    checked={attendedInPerson === "no"}
+                    onChange={() => setAttendedInPerson("no")}
+                  />
+                  No
+                </label>
+              </fieldset>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Sign Up"}

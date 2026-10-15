@@ -9,6 +9,8 @@ import {
 import { STRESS_TECHNIQUES } from "@/lib/stress-techniques";
 import { CHALLENGES } from "@/lib/challenges";
 import { Users, CheckCircle2, BarChart2, TrendingUp } from "lucide-react";
+import { CohortTabs } from "@/components/cohort-tabs";
+import { parseCohort, rowCohort, type CohortKey } from "@/lib/cohorts";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -17,26 +19,39 @@ function average(values: number[]): number | null {
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
-async function AdminOverviewContent() {
+async function AdminOverviewContent({ cohort }: { cohort: CohortKey }) {
   const supabase = await createClient();
 
   const [
-    { data: participants },
     { data: workflows },
     { data: results },
     { data: progress },
+    { data: cohorts },
   ] = await Promise.all([
-    supabase.rpc("admin_list_participants"),
     supabase
       .from("official_challenge_workflows")
       .select(
-        "status, stress_management_technique, pre_stress_level, post_stress_level",
+        "user_id, deleted_account_cohort, status, stress_management_technique, pre_stress_level, post_stress_level",
       ),
-    supabase.from("challenge_results").select("challenge, is_official"),
-    supabase.rpc("admin_participant_progress"),
+    supabase.from("challenge_results").select("user_id, deleted_account_cohort, challenge, is_official"),
+    supabase.rpc("admin_participant_progress", { p_cohort: cohort }),
+    supabase.rpc("admin_participant_cohorts"),
   ]);
 
-  const participantCount = participants?.length ?? 0;
+  // Only rows in the selected cohort count; admins never match a cohort.
+  // Rows from deleted accounts keep the cohort frozen at deletion.
+  const cohortRows =
+    (cohorts as { user_id: string; cohort: string }[] | null) ?? [];
+  const cohortByUser = new Map(cohortRows.map((c) => [c.user_id, c.cohort]));
+  const inCohort = cohortRows.filter((c) => c.cohort === cohort);
+  const cohortWorkflows = (workflows ?? []).filter(
+    (w) => rowCohort(w, cohortByUser) === cohort,
+  );
+  const cohortResults = (results ?? []).filter(
+    (r) => rowCohort(r, cohortByUser) === cohort,
+  );
+
+  const participantCount = inCohort.length;
   const progressRows =
     (progress as { finished_trial: boolean }[] | null) ?? [];
   const retentionPercent =
@@ -47,7 +62,7 @@ async function AdminOverviewContent() {
             100,
         )
       : null;
-  const completedWorkflows = (workflows ?? []).filter(
+  const completedWorkflows = cohortWorkflows.filter(
     (w) => w.status === "completed",
   );
   const totalRuns = completedWorkflows.length;
@@ -73,7 +88,7 @@ async function AdminOverviewContent() {
 
   const attemptsByChallenge = CHALLENGES.map((challenge) => ({
     challenge,
-    count: (results ?? []).filter(
+    count: cohortResults.filter(
       (r) => r.challenge === challenge.key && r.is_official,
     ).length,
   }));
@@ -83,9 +98,11 @@ async function AdminOverviewContent() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Admin Overview</h1>
         <p className="text-muted-foreground mt-1">
-          Aggregate data across all study participants.
+          Aggregate data for the selected cohort. Admin accounts are excluded.
         </p>
       </div>
+
+      <CohortTabs basePath="/protected/admin" current={cohort} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/50 shadow-none">
@@ -100,7 +117,7 @@ async function AdminOverviewContent() {
               {participantCount}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Total registered accounts
+              Registered accounts in this cohort
             </p>
           </CardContent>
         </Card>
@@ -145,7 +162,7 @@ async function AdminOverviewContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              {(results ?? []).filter((r) => r.is_official).length}
+              {cohortResults.filter((r) => r.is_official).length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Official challenge attempts logged
@@ -257,14 +274,19 @@ async function AdminOverviewContent() {
   );
 }
 
-export default function AdminOverviewPage() {
+export default async function AdminOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cohort?: string }>;
+}) {
+  const { cohort } = await searchParams;
   return (
     <Suspense
       fallback={
         <div className="h-64 bg-muted animate-pulse rounded-lg" />
       }
     >
-      <AdminOverviewContent />
+      <AdminOverviewContent cohort={parseCohort(cohort)} />
     </Suspense>
   );
 }

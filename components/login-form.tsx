@@ -48,7 +48,12 @@ export function LoginForm({
       // Update this route to redirect to an authenticated route. The user already has an active session.
       router.push("/protected");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      const message = error instanceof Error ? error.message : "";
+      setError(
+        /not confirmed/i.test(message)
+          ? "Please verify your email first — check your inbox for the confirmation link."
+          : message || "An error occurred",
+      );
     } finally {
       setIsLoading(false);
     }

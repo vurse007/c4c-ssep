@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import {
   Card,
   CardContent,
@@ -24,11 +25,15 @@ async function AdminUsersContent({ cohort }: { cohort: CohortKey }) {
 
   const [{ data: progress, error }, { data: workflows }] = await Promise.all([
     supabase.rpc("admin_participant_progress", { p_cohort: cohort }),
-    supabase
-      .from("official_challenge_workflows")
-      .select("user_id, completed_at")
-      .eq("status", "completed")
-      .not("user_id", "is", null),
+    fetchAllRows((from, to) =>
+      supabase
+        .from("official_challenge_workflows")
+        .select("user_id, completed_at")
+        .eq("status", "completed")
+        .not("user_id", "is", null)
+        .order("id")
+        .range(from, to),
+    ),
   ]);
 
   const lastFinishedByUser = new Map<string, string>();

@@ -4,6 +4,7 @@ import { isCurrentUserAdmin } from "@/lib/supabase/is-admin";
 import { isAdminTableKey } from "@/lib/admin-tables";
 import { toCsv } from "@/lib/csv";
 import { withCohort } from "@/lib/cohorts";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -26,7 +27,13 @@ export async function GET(request: NextRequest) {
 
   const [{ data, error }, { data: cohorts, error: cohortError }] =
     await Promise.all([
-      supabase.from(table).select("*"),
+      fetchAllRows((from, to) =>
+        supabase
+          .from(table)
+          .select("*")
+          .order(table === "participant_profiles" ? "user_id" : "id")
+          .range(from, to),
+      ),
       supabase.rpc("admin_participant_cohorts"),
     ]);
   if (error || cohortError) {

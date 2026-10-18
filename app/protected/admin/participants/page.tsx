@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import {
   Card,
   CardContent,
@@ -26,7 +27,13 @@ async function AdminParticipantsContent() {
   ] =
     await Promise.all([
       supabase.rpc("admin_list_participants"),
-      supabase.from("challenge_results").select("user_id, is_official"),
+      fetchAllRows((from, to) =>
+        supabase
+          .from("challenge_results")
+          .select("user_id, is_official")
+          .order("id")
+          .range(from, to),
+      ),
       supabase.rpc("admin_participant_cohorts"),
     ]);
 

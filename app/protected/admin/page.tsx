@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import {
   Card,
   CardContent,
@@ -42,12 +43,22 @@ async function AdminOverviewContent({
     { data: cohorts },
     { data: tiers },
   ] = await Promise.all([
-    supabase
-      .from("official_challenge_workflows")
-      .select(
-        "id, user_id, deleted_account_cohort, status, completion_local_date, completed_at, stress_management_technique, pre_stress_level, post_stress_level",
-      ),
-    supabase.from("challenge_results").select("user_id, deleted_account_cohort, workflow_id, challenge, is_official"),
+    fetchAllRows((from, to) =>
+      supabase
+        .from("official_challenge_workflows")
+        .select(
+          "id, user_id, deleted_account_cohort, status, completion_local_date, completed_at, stress_management_technique, pre_stress_level, post_stress_level",
+        )
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAllRows((from, to) =>
+      supabase
+        .from("challenge_results")
+        .select("user_id, deleted_account_cohort, workflow_id, challenge, is_official")
+        .order("id")
+        .range(from, to),
+    ),
     supabase.rpc("admin_participant_progress", {
       p_cohort: cohort,
       p_tier: tier,
